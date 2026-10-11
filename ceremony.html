@@ -1,0 +1,1412 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>D000 — Cérémonie d'Initiation V0.1</title>
+<style>
+:root{--ink:#e8e5dc;--muted:#77766f;--line:rgba(232,229,220,.16);--accent:#d9d4c7}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;color:var(--ink);font-family:"Courier New",monospace;overflow:hidden}
+body{touch-action:manipulation}
+#stage{position:fixed;inset:0;background:#000;isolation:isolate}
+#grain{position:absolute;inset:-50%;opacity:.035;pointer-events:none;background-image:repeating-radial-gradient(circle at 30% 20%,#fff 0 1px,transparent 1px 4px);animation:grain 8s steps(10) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(3%,-2%)}50%{transform:translate(-2%,3%)}75%{transform:translate(1%,2%)}100%{transform:translate(0,0)}}
+.geometry{position:absolute;left:50%;top:50%;width:min(76vw,76vh);aspect-ratio:1;transform:translate(-50%,-50%);opacity:0;transition:opacity 2.4s ease}
+.geometry:before,.geometry:after{content:"";position:absolute;inset:0;border:1px solid var(--line);border-radius:50%;animation:rot 38s linear infinite}
+.geometry:after{inset:12%;border-style:dashed;animation-direction:reverse;animation-duration:52s}
+@keyframes rot{to{transform:rotate(360deg)}}
+.cross{position:absolute;inset:0;opacity:.13}
+.cross:before,.cross:after{content:"";position:absolute;background:#ddd}
+.cross:before{width:1px;height:100%;left:50%}
+.cross:after{height:1px;width:100%;top:50%}
+#symbols{position:absolute;inset:0}
+.symbol{position:absolute;left:50%;top:50%;width:min(28vw,28vh);aspect-ratio:1;transform:translate(-50%,-50%) scale(.74);opacity:0;filter:drop-shadow(0 0 18px rgba(255,255,255,.12));transition:opacity 2s ease,transform 3.2s cubic-bezier(.2,.7,.1,1),left 3s ease,top 3s ease}
+.symbol img,.order img{width:100%;height:100%;object-fit:contain}
+.symbol.show{opacity:.92;transform:translate(-50%,-50%) scale(1)}
+.symbol.orbit{width:min(19vw,19vh);opacity:.7}
+#s1.orbit{left:50%;top:23%} #s2.orbit{left:75%;top:42%} #s3.orbit{left:66%;top:72%} #s4.orbit{left:34%;top:72%} #s5.orbit{left:25%;top:42%}
+.symbol.converge{left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(.18) rotate(22deg);opacity:0;transition-duration:3.5s}
+.order{position:absolute;left:50%;top:50%;width:min(54vw,54vh);transform:translate(-50%,-50%) scale(.82);opacity:0;transition:opacity 3s ease,transform 4s cubic-bezier(.12,.8,.18,1);filter:drop-shadow(0 0 24px rgba(255,255,255,.13))}
+.order.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#caption{position:absolute;left:50%;bottom:8vh;transform:translateX(-50%);width:min(88vw,900px);text-align:center;letter-spacing:.25em;font-size:clamp(11px,1.25vw,17px);opacity:0;transition:opacity 1.2s ease;text-transform:uppercase}
+#caption.show{opacity:.82}
+#status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.3s ease}
+#status.show{opacity:1}
+.statusbox{width:min(86vw,680px);border-top:1px solid #5e5d58;border-bottom:1px solid #5e5d58;padding:26px 12px;text-align:left}
+.row{display:flex;justify-content:space-between;gap:20px;padding:7px 0;letter-spacing:.12em;font-size:clamp(11px,1.5vw,17px)}
+.row span:first-child{color:#777}
+#division{font-weight:bold}
+#finalLogo{position:absolute;left:50%;top:31%;width:min(32vw,32vh);transform:translate(-50%,-50%);opacity:0;transition:opacity 1.5s ease;filter:drop-shadow(0 0 25px color-mix(in srgb,var(--accent) 35%,transparent))}
+#finalLogo.show{opacity:1}
+#intro{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:50}
+.panel{width:min(88vw,720px);padding:30px;border:1px solid #343434;background:#050505}
+.kicker{font-size:11px;letter-spacing:.25em;color:#777;margin-bottom:12px}
+h1{font-size:clamp(19px,3vw,31px);font-weight:normal;letter-spacing:.12em;margin:0 0 12px}
+p{color:#8f8e88;line-height:1.55;font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+button,select{background:#090909;color:#d8d6ce;border:1px solid #444;padding:11px 13px;font:12px "Courier New",monospace;letter-spacing:.08em}
+button:hover{border-color:#aaa}
+#testbar{position:fixed;top:10px;right:10px;z-index:60;display:none;gap:6px;opacity:.55}
+#testbar:hover{opacity:1}
+#testbar button{padding:7px 9px;font-size:10px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.flash.go{animation:flash .75s ease-out}
+@keyframes flash{0%{opacity:0}20%{opacity:.13}100%{opacity:0}}
+@media(max-width:650px){.symbol{width:min(42vw,28vh)}.symbol.orbit{width:min(28vw,18vh)}.order{width:min(78vw,48vh)}.row{letter-spacing:.06em}}
+
+/* V0.2 — mise en scène avancée */
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 30%,rgba(0,0,0,.34) 68%,rgba(0,0,0,.86) 100%);z-index:8}
+#sweep{position:absolute;left:50%;top:50%;width:min(90vw,90vh);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;opacity:0;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 83%,rgba(255,255,255,.08) 87%,transparent 91%);mix-blend-mode:screen}
+#sweep.go{opacity:.55;animation:sweep 7s linear infinite}@keyframes sweep{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.symbol:before,.symbol:after{content:"";position:absolute;inset:4%;border-radius:50%;opacity:0;pointer-events:none}
+.symbol.awake:before{border:1px solid rgba(255,255,255,.16);animation:ringbirth 2.6s ease-out}
+.symbol.awake:after{inset:-9%;border:1px dashed rgba(255,255,255,.10);animation:ringbirth 3.4s ease-out reverse}
+@keyframes ringbirth{0%{opacity:0;transform:scale(.55) rotate(-20deg)}35%{opacity:.8}100%{opacity:0;transform:scale(1.25) rotate(35deg)}}
+#s1.awake img{animation:eyeIn 3.5s ease-out}@keyframes eyeIn{0%{clip-path:inset(48% 0 48% 0);filter:blur(7px)}55%{clip-path:inset(0 0 0 0);filter:blur(0)}}
+#s2.awake img{animation:flameIn 3.2s cubic-bezier(.2,.9,.2,1)}@keyframes flameIn{0%{clip-path:inset(100% 0 0 0);transform:scaleY(.35)}70%{clip-path:inset(0);transform:scaleY(1.08)}100%{transform:scaleY(1)}}
+#s3.awake img{animation:handIn 3.2s steps(12)}@keyframes handIn{0%{opacity:.05;transform:translateY(14px)}25%{opacity:.3}45%{opacity:.1}55%{opacity:.7}100%{opacity:1;transform:none}}
+#s4.awake img{animation:spiralIn 4.5s cubic-bezier(.1,.8,.2,1)}@keyframes spiralIn{0%{opacity:0;transform:rotate(-130deg) scale(.3)}100%{opacity:1;transform:rotate(0) scale(1)}}
+#s5.awake img{animation:hourIn 4.2s ease-out}@keyframes hourIn{0%{opacity:0;transform:scaleY(1.35);filter:blur(12px)}35%{opacity:.35}60%{opacity:.15}100%{opacity:1;transform:scaleY(1);filter:none}}
+.order.reveal{animation:orderReveal 6s cubic-bezier(.12,.8,.18,1) forwards}
+@keyframes orderReveal{0%{opacity:0;transform:translate(-50%,-50%) scale(.5);filter:blur(18px) drop-shadow(0 0 0 #fff)}
+22%{opacity:.18;filter:blur(5px) drop-shadow(0 0 30px rgba(255,255,255,.5))}
+48%{opacity:.95;transform:translate(-50%,-50%) scale(1.08);filter:blur(0) drop-shadow(0 0 55px rgba(255,255,255,.2))}
+100%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 0 24px rgba(255,255,255,.13))}}
+#sealrings{position:absolute;left:50%;top:50%;width:min(65vw,65vh);aspect-ratio:1;transform:translate(-50%,-50%);opacity:0;pointer-events:none}
+#sealrings:before,#sealrings:after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.18);border-radius:50%}
+#sealrings:after{inset:10%;border-style:dotted}
+#sealrings.show{opacity:1;animation:seal 5.5s ease-out}@keyframes seal{0%{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(-55deg)}30%{opacity:.7}100%{opacity:.2;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+
+/* V0.3 — emblèmes officiels couleur + fin sans superposition */
+.symbol img,.order img{filter:none!important;mix-blend-mode:screen}
+.symbol{transition:opacity 1.15s ease,transform 1.55s cubic-bezier(.18,.75,.18,1)}
+.symbol.vanish{opacity:0!important;transform:translate(-50%,-50%) scale(.18)!important}
+.order{transition:opacity 1.25s ease,transform 1.4s ease}
+.order.exit{opacity:0!important;transform:translate(-50%,-50%) scale(.82)!important}
+#divisionFinal{
+ position:absolute;left:50%;top:43%;width:min(32vw,32vh);aspect-ratio:1;
+ transform:translate(-50%,-50%) scale(.78);opacity:0;z-index:7;
+ transition:opacity 1.3s ease,transform 1.6s cubic-bezier(.18,.8,.18,1);
+ pointer-events:none
+}
+#divisionFinal img{width:100%;height:100%;object-fit:contain;filter:none;mix-blend-mode:screen}
+#divisionFinal.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#finalPanel{z-index:9}
+
+/* V0.3.3 — fluidité restaurée */
+.symbol{transition:left 5.2s cubic-bezier(.16,.72,.18,1),top 5.2s cubic-bezier(.16,.72,.18,1),transform 5.2s cubic-bezier(.16,.72,.18,1),opacity 2.8s ease!important}
+.symbol.converge{left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(.52)!important;opacity:.95!important}
+.symbol.vanish,.symbol.softvanish{left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(.20)!important;opacity:0!important}
+.order{transition:opacity 4.8s ease,transform 5.2s cubic-bezier(.16,.72,.18,1)!important}
+.order.exit,.order.slowexit{opacity:0!important;transform:translate(-50%,-50%) scale(.90)!important}
+#geo{transition:opacity 3.5s ease}
+
+/* V0.7 — LE SCEAU DES CINQ */
+#geo.five-seal{position:absolute;left:50%;top:50%;width:min(78vmin,760px);height:min(78vmin,760px);transform:translate(-50%,-50%);opacity:0;transition:opacity 3.2s ease}
+#geo.five-seal:before,#geo.five-seal:after{display:none}
+#geo.five-seal .seal-circle{position:absolute;left:50%;top:50%;border:1px solid rgba(238,241,239,.10);border-radius:50%;transform:translate(-50%,-50%);transition:opacity 2.4s ease,transform 4s ease}
+#geo.five-seal .outer{width:88%;height:88%;opacity:.38}
+#geo.five-seal .inner{width:43%;height:43%;opacity:.22;border-style:dashed}
+#geo.five-seal .seal-axis{position:absolute;left:50%;top:50%;width:1px;height:43%;transform-origin:50% 0;background:linear-gradient(to bottom,rgba(238,241,239,.18),rgba(238,241,239,.018));opacity:.055;transition:opacity 2.4s ease,filter 2.4s ease}
+#geo.five-seal .a1{transform:rotate(0deg)} #geo.five-seal .a2{transform:rotate(72deg)} #geo.five-seal .a3{transform:rotate(144deg)} #geo.five-seal .a4{transform:rotate(216deg)} #geo.five-seal .a5{transform:rotate(288deg)}
+#geo.five-seal .seal-node{position:absolute;width:7px;height:7px;border:1px solid rgba(238,241,239,.22);border-radius:50%;opacity:.08;transition:opacity 2.4s ease,box-shadow 2.4s ease}
+#geo.five-seal .n1{left:49.5%;top:5%} #geo.five-seal .n2{left:91.5%;top:35%} #geo.five-seal .n3{left:76%;top:84%} #geo.five-seal .n4{left:22%;top:84%} #geo.five-seal .n5{left:6%;top:35%}
+#geo.five-seal .seal-core{position:absolute;left:50%;top:50%;width:10px;height:10px;border:1px solid rgba(238,241,239,.20);transform:translate(-50%,-50%) rotate(45deg);opacity:.16;transition:opacity 2.4s ease,transform 3.5s ease}
+#geo.five-seal.stage1 .a1,#geo.five-seal.stage1 .n1,
+#geo.five-seal.stage2 .a1,#geo.five-seal.stage2 .n1,#geo.five-seal.stage2 .a2,#geo.five-seal.stage2 .n2,
+#geo.five-seal.stage3 .a1,#geo.five-seal.stage3 .n1,#geo.five-seal.stage3 .a2,#geo.five-seal.stage3 .n2,#geo.five-seal.stage3 .a3,#geo.five-seal.stage3 .n3,
+#geo.five-seal.stage4 .a1,#geo.five-seal.stage4 .n1,#geo.five-seal.stage4 .a2,#geo.five-seal.stage4 .n2,#geo.five-seal.stage4 .a3,#geo.five-seal.stage4 .n3,#geo.five-seal.stage4 .a4,#geo.five-seal.stage4 .n4,
+#geo.five-seal.stage5 .seal-axis,#geo.five-seal.stage5 .seal-node{opacity:.68;filter:drop-shadow(0 0 4px rgba(255,255,255,.10))}
+#geo.five-seal.complete .outer{opacity:.68;transform:translate(-50%,-50%) scale(1.025)}
+#geo.five-seal.complete .inner{opacity:.48;transform:translate(-50%,-50%) scale(.975)}
+#geo.five-seal.complete .seal-core{opacity:.7;transform:translate(-50%,-50%) rotate(225deg) scale(1.22)}
+#caption{max-width:min(86vw,900px);letter-spacing:.15em;line-height:1.65;font-size:clamp(12px,1.35vw,17px);font-weight:400;text-shadow:0 0 18px rgba(255,255,255,.10)}
+
+#sweep{display:none!important}
+
+/* V0.7.1 — CONSTRUCTION DE L'ORDRE */
+#geo.order-field{position:absolute;left:50%;top:50%;width:min(94vmin,980px);height:min(78vmin,820px);transform:translate(-50%,-50%);opacity:0;transition:opacity 3s ease,transform 5s ease;overflow:visible}
+#geo.order-field:before,#geo.order-field:after{display:none}
+.field-grid{position:absolute;inset:5%;opacity:.38;background-image:linear-gradient(rgba(238,241,239,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(238,241,239,.045) 1px,transparent 1px);background-size:7.5% 10%;mask-image:radial-gradient(ellipse at center,#000 18%,rgba(0,0,0,.8) 54%,transparent 84%)}
+.field-grid:before,.field-grid:after{content:"";position:absolute;inset:9% 11%;border:1px solid rgba(238,241,239,.07);transform:skewX(-7deg) rotate(-3deg)}
+.field-grid:after{inset:19% 21%;transform:skewY(5deg) rotate(8deg);opacity:.65}
+.field-arc{position:absolute;left:50%;top:50%;border:1px solid rgba(238,241,239,.075);border-radius:50%;transform:translate(-50%,-50%);opacity:.4;transition:all 3s ease}
+.arc1{width:80%;height:80%}.arc2{width:49%;height:49%;border-style:dashed;opacity:.24}
+.division-layer{position:absolute;inset:0;opacity:0;transition:opacity 2.2s ease}
+.order-field.stage1 .eye,.order-field.stage2 .eye,.order-field.stage2 .flame,.order-field.stage3 .eye,.order-field.stage3 .flame,.order-field.stage3 .hand,.order-field.stage4 .eye,.order-field.stage4 .flame,.order-field.stage4 .hand,.order-field.stage4 .spiral,.order-field.stage5 .division-layer{opacity:1}
+.sight,.route,.branch,.trace,.contain,.point{position:absolute;display:block}
+.eye .sight{height:1px;background:linear-gradient(90deg,transparent,rgba(225,240,255,.32),transparent)}
+.eye .h1{left:8%;top:36%;width:84%;transform:rotate(-7deg)}.eye .h2{left:14%;top:63%;width:72%;transform:rotate(5deg)}
+.eye .v1{left:52%;top:14%;width:1px;height:68%;background:linear-gradient(transparent,rgba(225,240,255,.28),transparent)}
+.eye .point{width:5px;height:5px;border:1px solid rgba(225,240,255,.45);border-radius:50%;box-shadow:0 0 9px rgba(225,240,255,.16)}
+.eye .p1{left:22%;top:40%}.eye .p2{left:57%;top:31%}.eye .p3{left:72%;top:59%}
+.flame .route{height:1px;width:48%;left:27%;top:48%;background:linear-gradient(90deg,transparent,rgba(255,120,100,.31),transparent);transform-origin:center}
+.flame .r1{transform:rotate(18deg)}.flame .r2{transform:rotate(-18deg)}.flame .r3{transform:rotate(180deg) translateY(18px);opacity:.7}
+.hand .branch{height:1px;width:38%;left:50%;top:50%;transform-origin:left center;background:linear-gradient(90deg,rgba(220,205,135,.31),transparent)}
+.hand .b1{transform:rotate(-42deg)}.hand .b2{transform:rotate(-14deg)}.hand .b3{transform:rotate(18deg)}.hand .b4{transform:rotate(47deg)}
+.spiral .trace{left:50%;top:50%;border:1px solid rgba(175,215,185,.20);border-radius:50%;transform:translate(-50%,-50%)}
+.spiral .t1{width:31%;height:31%;opacity:.85}.spiral .t2{width:49%;height:49%;opacity:.55}.spiral .t3{width:67%;height:67%;opacity:.3}
+.hourglass .contain{left:50%;top:50%;border:1px solid rgba(180,155,225,.22);border-radius:50%;transform:translate(-50%,-50%)}
+.hourglass .c1{width:87%;height:87%}.hourglass .c2{width:73%;height:73%;border-style:dashed}.hourglass .c3{width:59%;height:59%;opacity:.65}
+.field-core{position:absolute;left:50%;top:50%;width:8px;height:8px;border:1px solid rgba(245,245,245,.28);transform:translate(-50%,-50%) rotate(45deg);opacity:.4;transition:all 3s ease}
+.order-field.complete .field-core{transform:translate(-50%,-50%) rotate(225deg) scale(1.45);opacity:.85}
+.order-field.complete .field-arc{opacity:.7}
+.order-field.complete{transform:translate(-50%,-50%) scale(.985)}
+
+
+/* V0.7.2 — PRÉSENCE INITIALE
+   Le décor existe avant les Divisions : profondeur, architecture et respiration.
+   Aucun radar, aucune rotation continue. */
+#geo.order-field{
+  width:min(108vmin,1120px);
+  height:min(88vmin,900px);
+}
+#geo.order-field .field-grid{
+  opacity:.56;
+  background-size:7.5% 10%;
+  filter:drop-shadow(0 0 10px rgba(255,255,255,.025));
+}
+#geo.order-field .field-grid:before{
+  border-color:rgba(238,241,239,.105);
+}
+#geo.order-field .field-grid:after{
+  border-color:rgba(238,241,239,.075);
+}
+#geo.order-field .field-arc.arc1{opacity:.56;border-color:rgba(238,241,239,.105)}
+#geo.order-field .field-arc.arc2{opacity:.36;border-color:rgba(238,241,239,.085)}
+#geo.order-field .field-core{
+  opacity:.58;
+  box-shadow:0 0 18px rgba(255,255,255,.055);
+}
+
+/* Architecture secondaire, créée sans nouveau HTML */
+#geo.order-field:before{
+  display:block;
+  content:"";
+  position:absolute;
+  left:50%;top:50%;
+  width:94%;height:72%;
+  transform:translate(-50%,-50%) rotate(-2deg);
+  border-top:1px solid rgba(238,241,239,.055);
+  border-bottom:1px solid rgba(238,241,239,.055);
+  background:
+    linear-gradient(90deg,transparent 7%,rgba(238,241,239,.055) 7.1%,transparent 7.25%),
+    linear-gradient(90deg,transparent 92%,rgba(238,241,239,.055) 92.1%,transparent 92.25%);
+  opacity:.8;
+  pointer-events:none;
+}
+#geo.order-field:after{
+  display:block;
+  content:"OCI // CONTINUITÉ     05 AXES     ÉTAT : STABLE";
+  position:absolute;
+  left:50%;bottom:4%;
+  transform:translateX(-50%);
+  width:76%;
+  padding-top:8px;
+  border-top:1px solid rgba(238,241,239,.065);
+  color:rgba(238,241,239,.16);
+  font:9px/1.4 monospace;
+  letter-spacing:.22em;
+  text-align:center;
+  white-space:nowrap;
+  opacity:.75;
+  pointer-events:none;
+}
+
+/* Une respiration très lente : l'écran paraît vivant, jamais agité. */
+@keyframes orderBreath{
+  0%,100%{opacity:.48;filter:brightness(.88)}
+  50%{opacity:.66;filter:brightness(1.08)}
+}
+@keyframes coreBreath{
+  0%,100%{box-shadow:0 0 10px rgba(255,255,255,.035)}
+  50%{box-shadow:0 0 25px rgba(255,255,255,.085)}
+}
+#geo.order-field.opening-presence{
+  animation:orderBreath 9s ease-in-out infinite;
+}
+#geo.order-field.opening-presence .field-core{
+  animation:coreBreath 6.5s ease-in-out infinite;
+}
+
+/* Dès qu'une Division intervient, sa transformation reste dominante. */
+#geo.order-field.stage1,#geo.order-field.stage2,#geo.order-field.stage3,
+#geo.order-field.stage4,#geo.order-field.stage5{
+  animation:none;
+  opacity:.64!important;
+}
+
+
+/* V0.8 — ARCHITECTURE DES CINQ
+   Chaque Division construit une partie indispensable d'une même machine visuelle. */
+
+/* On neutralise les anciennes couches décoratives de V0.7.x. */
+#geo.order-field .division-layer{opacity:0!important}
+#geo.order-field.stage1 .division-layer,
+#geo.order-field.stage2 .division-layer,
+#geo.order-field.stage3 .division-layer,
+#geo.order-field.stage4 .division-layer,
+#geo.order-field.stage5 .division-layer{opacity:0!important}
+
+/* Le réseau initial devient le support architectural. */
+#geo.order-field .field-grid{opacity:.42}
+#geo.order-field .field-arc{transition:opacity 2s ease,transform 3.8s cubic-bezier(.2,.7,.2,1),border-color 2s ease}
+#geo.order-field .field-core{z-index:8}
+
+/* Cinq éléments structurels sont dessinés avec pseudo-éléments/ombres.
+   Ils convergent tous vers le même centre : une rosace institutionnelle à cinq branches. */
+#geo.order-field .eye,
+#geo.order-field .flame,
+#geo.order-field .hand,
+#geo.order-field .spiral,
+#geo.order-field .hourglass{
+ display:block!important;position:absolute;inset:0;opacity:0!important;
+ transition:opacity 2.2s ease,transform 3.2s cubic-bezier(.2,.75,.2,1);
+}
+
+/* ŒIL — établit l'axe et le cercle de lecture */
+#geo.order-field.stage1 .eye,
+#geo.order-field.stage2 .eye,#geo.order-field.stage3 .eye,#geo.order-field.stage4 .eye,#geo.order-field.stage5 .eye{opacity:1!important}
+#geo.order-field .eye:before{
+ content:"";position:absolute;left:50%;top:50%;width:68%;height:68%;
+ transform:translate(-50%,-50%);
+ border:1px solid rgba(210,232,255,.30);border-radius:50%;
+ box-shadow:inset 0 0 35px rgba(210,232,255,.025),0 0 18px rgba(210,232,255,.025);
+}
+#geo.order-field .eye:after{
+ content:"";position:absolute;left:50%;top:10%;width:1px;height:80%;
+ background:linear-gradient(transparent,rgba(210,232,255,.34) 25%,rgba(210,232,255,.34) 75%,transparent);
+}
+
+/* FLAMME — crée le second axe, diagonal et son contre-axe */
+#geo.order-field.stage2 .flame,#geo.order-field.stage3 .flame,#geo.order-field.stage4 .flame,#geo.order-field.stage5 .flame{opacity:1!important}
+#geo.order-field .flame:before,#geo.order-field .flame:after{
+ content:"";position:absolute;left:50%;top:50%;width:1px;height:76%;transform-origin:50% 50%;
+ background:linear-gradient(transparent,rgba(255,125,105,.31) 22%,rgba(255,125,105,.31) 78%,transparent);
+}
+#geo.order-field .flame:before{transform:translate(-50%,-50%) rotate(72deg)}
+#geo.order-field .flame:after{transform:translate(-50%,-50%) rotate(252deg);opacity:.55}
+
+/* MAIN — ajoute la troisième direction et les points de causalité */
+#geo.order-field.stage3 .hand,#geo.order-field.stage4 .hand,#geo.order-field.stage5 .hand{opacity:1!important}
+#geo.order-field .hand:before{
+ content:"";position:absolute;left:50%;top:50%;width:1px;height:76%;
+ background:linear-gradient(transparent,rgba(225,205,125,.33) 20%,rgba(225,205,125,.33) 80%,transparent);
+ transform:translate(-50%,-50%) rotate(144deg);
+}
+#geo.order-field .hand:after{
+ content:"";position:absolute;left:50%;top:50%;width:52%;height:52%;
+ transform:translate(-50%,-50%) rotate(18deg);
+ border:1px dashed rgba(225,205,125,.18);border-radius:50%;
+}
+
+/* SPIRALE — inscrit les trois axes dans une mémoire commune */
+#geo.order-field.stage4 .spiral,#geo.order-field.stage5 .spiral{opacity:1!important}
+#geo.order-field .spiral:before{
+ content:"";position:absolute;left:50%;top:50%;width:58%;height:58%;
+ transform:translate(-50%,-50%) rotate(216deg);
+ border:1px solid rgba(155,210,170,.27);border-radius:50%;
+ box-shadow:0 0 0 18px rgba(155,210,170,.025),0 0 0 36px rgba(155,210,170,.018);
+}
+#geo.order-field .spiral:after{
+ content:"";position:absolute;left:50%;top:50%;width:1px;height:76%;
+ background:linear-gradient(transparent,rgba(155,210,170,.30) 20%,rgba(155,210,170,.30) 80%,transparent);
+ transform:translate(-50%,-50%) rotate(216deg);
+}
+
+/* SABLIER — ferme le cinquième axe et transforme l'ensemble en sceau achevé */
+#geo.order-field.stage5 .hourglass{opacity:1!important}
+#geo.order-field .hourglass:before{
+ content:"";position:absolute;left:50%;top:50%;width:1px;height:76%;
+ background:linear-gradient(transparent,rgba(190,155,230,.34) 20%,rgba(190,155,230,.34) 80%,transparent);
+ transform:translate(-50%,-50%) rotate(288deg);
+}
+#geo.order-field .hourglass:after{
+ content:"";position:absolute;left:50%;top:50%;width:82%;height:82%;
+ transform:translate(-50%,-50%);
+ border:1px solid rgba(190,155,230,.24);border-radius:50%;
+ box-shadow:inset 0 0 0 1px rgba(238,241,239,.025),0 0 28px rgba(190,155,230,.025);
+}
+
+/* Lorsque les cinq existent, l'ensemble est lu comme UNE construction. */
+#geo.order-field.stage5 .field-core,
+#geo.order-field.complete .field-core{
+ width:13px;height:13px;opacity:.9;
+ transform:translate(-50%,-50%) rotate(225deg);
+ box-shadow:0 0 26px rgba(255,255,255,.10);
+}
+#geo.order-field.stage5 .arc1{opacity:.76;transform:translate(-50%,-50%) scale(1.015)}
+#geo.order-field.stage5 .arc2{opacity:.54;transform:translate(-50%,-50%) scale(.985)}
+#geo.order-field.complete{
+ filter:drop-shadow(0 0 13px rgba(255,255,255,.035));
+}
+
+/* Cinq petits nœuds équidistants matérialisés par le contour de contention.
+   La composition reste élégante même sur mobile. */
+@media (max-width:600px){
+ #geo.order-field{width:118vmin;height:94vmin}
+ #geo.order-field:after{font-size:7px;letter-spacing:.14em;width:82%}
+}
+
+
+/* DEMO — COURONNE DES CINQ
+   Refonte du fond : monumental, monochrome, construit par secteurs.
+   Les emblèmes restent les seules sources de couleur. */
+
+/* Suppression totale des anciennes constructions colorées */
+#geo.order-field .division-layer,
+#geo.order-field .eye,#geo.order-field .flame,#geo.order-field .hand,
+#geo.order-field .spiral,#geo.order-field .hourglass{display:none!important}
+#geo.order-field .field-grid{opacity:.16!important;filter:none!important}
+#geo.order-field .field-grid:before,#geo.order-field .field-grid:after{opacity:.25!important}
+#geo.order-field{width:min(92vmin,900px)!important;height:min(92vmin,900px)!important}
+
+/* Les deux anneaux deviennent la base de la couronne */
+#geo.order-field .field-arc.arc1{
+ width:84%!important;height:84%!important;
+ border:1px solid rgba(238,241,239,.16)!important;
+ opacity:.72!important;
+ box-shadow:0 0 0 14px rgba(238,241,239,.012),0 0 0 28px rgba(238,241,239,.009);
+}
+#geo.order-field .field-arc.arc2{
+ width:70%!important;height:70%!important;
+ border:1px dashed rgba(238,241,239,.10)!important;
+ opacity:.56!important;
+}
+
+/* Centre volontairement vide : cinq pétales/arcs fins, pas de toile d'araignée */
+#geo.order-field .field-core{
+ width:34%!important;height:34%!important;border-radius:50%!important;
+ border:1px solid rgba(238,241,239,.08)!important;
+ background:transparent!important;
+ opacity:.55!important;box-shadow:none!important;
+ transform:translate(-50%,-50%)!important;
+}
+
+/* Cinq secteurs construits par conic-gradient monochrome.
+   Chaque stage révèle 72° supplémentaires de la couronne. */
+#geo.order-field:before{
+ display:block!important;content:""!important;
+ position:absolute!important;left:50%!important;top:50%!important;
+ width:92%!important;height:92%!important;
+ transform:translate(-50%,-50%)!important;
+ border-radius:50%!important;
+ background:conic-gradient(
+   from -36deg,
+   rgba(238,241,239,.26) 0deg,
+   rgba(238,241,239,.06) 2deg,
+   transparent 2.5deg 69deg,
+   rgba(238,241,239,.13) 69.5deg 71.5deg,
+   transparent 72deg 141deg,
+   rgba(238,241,239,.13) 141.5deg 143.5deg,
+   transparent 144deg 213deg,
+   rgba(238,241,239,.13) 213.5deg 215.5deg,
+   transparent 216deg 285deg,
+   rgba(238,241,239,.13) 285.5deg 287.5deg,
+   transparent 288deg 357deg,
+   rgba(238,241,239,.20) 357.5deg 360deg
+ )!important;
+ -webkit-mask:radial-gradient(circle,transparent 0 73%,#000 73.4% 75.2%,transparent 75.6% 80%,#000 80.4% 81.2%,transparent 81.6%);
+ mask:radial-gradient(circle,transparent 0 73%,#000 73.4% 75.2%,transparent 75.6% 80%,#000 80.4% 81.2%,transparent 81.6%);
+ opacity:.34!important;
+ transition:opacity 2s ease,filter 2s ease!important;
+}
+
+/* Anneau de graduations institutionnelles */
+#geo.order-field:after{
+ display:block!important;content:""!important;
+ position:absolute!important;left:50%!important;top:50%!important;
+ width:96%!important;height:96%!important;
+ transform:translate(-50%,-50%)!important;
+ border-radius:50%!important;
+ background:repeating-conic-gradient(from -36deg,rgba(238,241,239,.13) 0 .45deg,transparent .45deg 4deg)!important;
+ -webkit-mask:radial-gradient(circle,transparent 0 84%,#000 84.3% 85%,transparent 85.3%);
+ mask:radial-gradient(circle,transparent 0 84%,#000 84.3% 85%,transparent 85.3%);
+ opacity:.34!important;
+}
+
+/* Révélation progressive : la couronne gagne en présence,
+   mais sans ajouter de traits vers le centre. */
+#geo.order-field.stage1:before{opacity:.40!important;clip-path:polygon(50% 50%,22% 0,78% 0)}
+#geo.order-field.stage2:before{opacity:.46!important;clip-path:polygon(50% 50%,22% 0,100% 18%,100% 68%,50% 50%)}
+#geo.order-field.stage3:before{opacity:.52!important;clip-path:polygon(50% 50%,22% 0,100% 18%,100% 68%,78% 100%,50% 50%)}
+#geo.order-field.stage4:before{opacity:.58!important;clip-path:polygon(50% 50%,22% 0,100% 18%,100% 68%,78% 100%,22% 100%,0 68%,50% 50%)}
+#geo.order-field.stage5:before,#geo.order-field.complete:before{opacity:.72!important;clip-path:none!important;filter:drop-shadow(0 0 12px rgba(255,255,255,.045))}
+
+/* cinq repères d'accueil autour de la couronne, sans couleurs */
+#geo.order-field.stage5 .field-arc.arc1,
+#geo.order-field.complete .field-arc.arc1{
+ border-color:rgba(245,245,245,.26)!important;
+ box-shadow:0 0 0 14px rgba(238,241,239,.018),0 0 0 28px rgba(238,241,239,.012),0 0 26px rgba(255,255,255,.025);
+}
+
+/* On retire le texte technique sous la figure : composition plus noble */
+#geo.order-field.opening-presence:after{content:""!important}
+
+/* Responsive */
+@media(max-width:600px){
+ #geo.order-field{width:105vmin!important;height:105vmin!important}
+}
+
+
+/* V0.9 DEMO — CIEL TRANSITOIRE + CONSTRUCTION ANIMÉE */
+#starfield{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity 2.8s ease}
+#starfield.fade{opacity:1}
+#starfield.out{opacity:0}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(245,247,245,.72);box-shadow:0 0 8px rgba(255,255,255,.20);animation:starLife var(--dur) ease-in-out var(--delay) infinite}
+.star.big{width:3px;height:3px;background:rgba(255,255,255,.85);box-shadow:0 0 13px rgba(255,255,255,.28)}
+@keyframes starLife{0%,100%{opacity:0;transform:scale(.45)}22%{opacity:.18}48%{opacity:.9;transform:scale(1)}72%{opacity:.22}}
+
+/* Rien de circulaire n'est visible au départ. */
+#geo.order-field.opening-presence{opacity:0!important;animation:none!important}
+#geo.order-field.opening-presence .field-arc,
+#geo.order-field.opening-presence .field-grid,
+#geo.order-field.opening-presence .field-core{opacity:0!important}
+
+/* À la première Division, la géométrie naît réellement. */
+#geo.order-field.stage1,#geo.order-field.stage2,#geo.order-field.stage3,#geo.order-field.stage4,#geo.order-field.stage5{opacity:.68!important}
+#geo.order-field.stage1 .field-grid{animation:gridBirth 2.8s ease both}
+@keyframes gridBirth{0%{opacity:0;transform:scale(.92)}100%{opacity:.22;transform:scale(1)}}
+
+/* Chaque Division déclenche une vraie écriture animée de son secteur. */
+#geo.order-field.stage1:before{animation:sectorBirth1 3.4s cubic-bezier(.18,.75,.2,1) both}
+#geo.order-field.stage2:before{animation:sectorBirth2 3.4s cubic-bezier(.18,.75,.2,1) both}
+#geo.order-field.stage3:before{animation:sectorBirth3 3.4s cubic-bezier(.18,.75,.2,1) both}
+#geo.order-field.stage4:before{animation:sectorBirth4 3.4s cubic-bezier(.18,.75,.2,1) both}
+#geo.order-field.stage5:before{animation:sectorBirth5 3.8s cubic-bezier(.18,.75,.2,1) both}
+@keyframes sectorBirth1{0%{opacity:0;transform:translate(-50%,-50%) scale(.82) rotate(-7deg)}100%{opacity:.42;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes sectorBirth2{0%{opacity:.22;transform:translate(-50%,-50%) scale(.94) rotate(5deg)}100%{opacity:.49;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes sectorBirth3{0%{opacity:.28;transform:translate(-50%,-50%) scale(.95) rotate(-4deg)}100%{opacity:.56;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes sectorBirth4{0%{opacity:.34;transform:translate(-50%,-50%) scale(.96) rotate(3deg)}100%{opacity:.63;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes sectorBirth5{0%{opacity:.40;filter:blur(3px);transform:translate(-50%,-50%) scale(.96)}100%{opacity:.74;filter:blur(0);transform:translate(-50%,-50%) scale(1)}}
+
+/* Anneaux eux-mêmes se dessinent progressivement avec l'arrivée des Divisions. */
+#geo.order-field .field-arc{transform:translate(-50%,-50%) scale(.88);opacity:0!important}
+#geo.order-field.stage1 .arc1{animation:ringIn 3s ease forwards}
+#geo.order-field.stage2 .arc2{animation:ringIn 3s ease forwards}
+#geo.order-field.stage3 .arc1,#geo.order-field.stage3 .arc2,
+#geo.order-field.stage4 .arc1,#geo.order-field.stage4 .arc2,
+#geo.order-field.stage5 .arc1,#geo.order-field.stage5 .arc2{opacity:.62!important;transform:translate(-50%,-50%) scale(1)}
+@keyframes ringIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.82)}100%{opacity:.58;transform:translate(-50%,-50%) scale(1)}}
+
+/* Le noyau n'existe qu'après plusieurs Divisions. */
+#geo.order-field .field-core{opacity:0!important}
+#geo.order-field.stage3 .field-core{animation:coreIn 2.6s ease forwards}
+#geo.order-field.stage4 .field-core,#geo.order-field.stage5 .field-core{opacity:.48!important}
+@keyframes coreIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}100%{opacity:.45;transform:translate(-50%,-50%) scale(1)}}
+
+
+/* V1.1 — FLUX DES CINQ */
+#energyCanvas{
+ position:absolute;inset:0;width:100%;height:100%;
+ pointer-events:none;opacity:0;transition:opacity 3.2s ease;
+}
+#energyCanvas.on{opacity:.72}
+#geo{display:none!important} /* abandon complet des anciens cercles/cartes */
+
+
+/* V1.2.2 — FONDU FINAL
+   L'emblème de l'Ordre et ses cercles quittent l'écran comme une seule image. */
+#order.final-fade{
+ opacity:0!important;
+ filter:blur(1.5px) brightness(.82)!important;
+ transform:translate(-50%,-50%) scale(.985)!important;
+ transition:opacity 5.8s ease,filter 5.8s ease,transform 6.2s ease!important;
+}
+#sealrings.final-fade{
+ opacity:0!important;
+ filter:blur(1.2px)!important;
+ transform:translate(-50%,-50%) scale(1.035)!important;
+ transition:opacity 6.4s ease,filter 6.4s ease,transform 6.8s ease!important;
+}
+
+
+/* V1.2.4 — départ cérémoniel de l'Ordre */
+#order.order-depart{
+  animation:orderDepart 6.2s cubic-bezier(.32,0,.22,1) forwards!important;
+}
+#sealrings.order-depart{
+  animation:ringsDepart 6.6s cubic-bezier(.32,0,.22,1) forwards!important;
+}
+@keyframes orderDepart{
+  0%{opacity:1;filter:blur(0) brightness(1);transform:translate(-50%,-50%) scale(1)}
+  55%{opacity:.52;filter:blur(.35px) brightness(.92);transform:translate(-50%,-50%) scale(.992)}
+  100%{opacity:0;filter:blur(2px) brightness(.72);transform:translate(-50%,-50%) scale(.975)}
+}
+@keyframes ringsDepart{
+  0%{opacity:1;filter:blur(0);transform:translate(-50%,-50%) scale(1)}
+  55%{opacity:.44;filter:blur(.35px);transform:translate(-50%,-50%) scale(1.015)}
+  100%{opacity:0;filter:blur(1.8px);transform:translate(-50%,-50%) scale(1.05)}
+}
+
+
+/* V1.2.5 — continuité stricte avant le fondu final */
+#order.order-depart{
+  opacity:0!important;
+  filter:blur(2px) brightness(.72)!important;
+  transform:translate(-50%,-50%) scale(.975)!important;
+  transition:opacity 6.2s cubic-bezier(.32,0,.22,1),
+             filter 6.2s cubic-bezier(.32,0,.22,1),
+             transform 6.2s cubic-bezier(.32,0,.22,1)!important;
+  animation:none!important;
+}
+#sealrings.order-depart{
+  opacity:0!important;
+  filter:blur(1.8px)!important;
+  transform:translate(-50%,-50%) scale(1.05)!important;
+  transition:opacity 6.6s cubic-bezier(.32,0,.22,1),
+             filter 6.6s cubic-bezier(.32,0,.22,1),
+             transform 6.6s cubic-bezier(.32,0,.22,1)!important;
+  animation:none!important;
+}
+
+
+/* V1.3.0 — ANNEAUX VIVANTS DE L'ORDRE
+   Les timings d'apparition/disparition restent ceux de V1.2.5. */
+#sealrings{
+  filter:drop-shadow(0 0 9px rgba(245,248,255,.16));
+}
+#sealrings .ring{
+  border-width:3px!important;
+  border-color:rgba(242,246,250,.62)!important;
+  box-shadow:
+    0 0 7px rgba(255,255,255,.16),
+    inset 0 0 7px rgba(255,255,255,.07)!important;
+  transform-origin:50% 50%!important;
+  will-change:transform,opacity,filter;
+}
+
+/* Anneau intérieur : respiration lente. */
+#sealrings .ring:nth-child(1){
+  border-width:4px!important;
+  animation:ringBreathe 5.6s ease-in-out infinite alternate!important;
+}
+/* Deuxième : légère ellipse/rotation. */
+#sealrings .ring:nth-child(2){
+  border-width:3px!important;
+  animation:ringOrbitA 9.5s ease-in-out infinite!important;
+}
+/* Troisième : oscillation inverse, plus ample. */
+#sealrings .ring:nth-child(3){
+  border-width:4px!important;
+  animation:ringOrbitB 12.5s ease-in-out infinite!important;
+}
+/* Extérieur : très lent, monumental. */
+#sealrings .ring:nth-child(4){
+  border-width:3px!important;
+  animation:ringOuter 15s ease-in-out infinite!important;
+}
+#sealrings .ring:nth-child(5){
+  border-width:4px!important;
+  animation:ringOuter2 18s ease-in-out infinite!important;
+}
+
+@keyframes ringBreathe{
+  0%{transform:scale(.975);opacity:.62;filter:brightness(.9)}
+  100%{transform:scale(1.025);opacity:.92;filter:brightness(1.12)}
+}
+@keyframes ringOrbitA{
+  0%,100%{transform:rotate(-1.5deg) scaleX(1.015) scaleY(.985)}
+  50%{transform:rotate(2deg) scaleX(.985) scaleY(1.015)}
+}
+@keyframes ringOrbitB{
+  0%,100%{transform:rotate(2deg) scale(.985)}
+  45%{transform:rotate(-2.4deg) scale(1.025)}
+  70%{transform:rotate(-.5deg) scale(1.008)}
+}
+@keyframes ringOuter{
+  0%,100%{transform:scale(1) rotate(0deg);opacity:.44}
+  50%{transform:scale(1.035) rotate(2.2deg);opacity:.68}
+}
+@keyframes ringOuter2{
+  0%,100%{transform:scale(1.025) rotate(1deg);opacity:.34}
+  50%{transform:scale(.985) rotate(-2deg);opacity:.58}
+}
+
+/* L'explosion "lance" les anneaux : agitation initiale puis stabilisation. */
+#sealrings.show{
+  animation:ringSystemBirth 3.8s cubic-bezier(.16,.75,.22,1) both;
+}
+@keyframes ringSystemBirth{
+  0%{filter:brightness(2.1) blur(1.2px);transform:translate(-50%,-50%) scale(.72)}
+  22%{filter:brightness(1.55) blur(.3px);transform:translate(-50%,-50%) scale(1.075)}
+  55%{filter:brightness(1.15) blur(0);transform:translate(-50%,-50%) scale(.985)}
+  100%{filter:brightness(1) blur(0);transform:translate(-50%,-50%) scale(1)}
+}
+
+/* Onde résiduelle périodique, très discrète, derrière l'emblème. */
+#sealrings::after{
+  content:"";
+  position:absolute;left:50%;top:50%;
+  width:88%;height:88%;
+  border:2px solid rgba(245,248,252,.32);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.92);
+  opacity:0;
+  box-shadow:0 0 12px rgba(255,255,255,.08);
+  animation:residualWave 7.8s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes residualWave{
+  0%,58%{opacity:0;transform:translate(-50%,-50%) scale(.92)}
+  63%{opacity:.28}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.16)}
+}
+
+/* Le fondu final validé reste prioritaire : tous les mouvements meurent avec lui. */
+#sealrings.order-depart .ring,
+#sealrings.order-depart::after{
+  animation-play-state:paused!important;
+}
+
+
+/* V1.3.1 — CORRECTION RÉELLE : géométrie des anneaux + sortie continue */
+#sealrings .ring{
+  position:absolute!important;
+  left:50%!important; top:50%!important;
+  border-style:solid!important;
+  border-radius:50%!important;
+  box-sizing:border-box!important;
+  pointer-events:none!important;
+}
+#sealrings .ring:nth-child(1){width:42%!important;height:42%!important;margin-left:-21%!important;margin-top:-21%!important}
+#sealrings .ring:nth-child(2){width:57%!important;height:57%!important;margin-left:-28.5%!important;margin-top:-28.5%!important}
+#sealrings .ring:nth-child(3){width:72%!important;height:72%!important;margin-left:-36%!important;margin-top:-36%!important}
+#sealrings .ring:nth-child(4){width:87%!important;height:87%!important;margin-left:-43.5%!important;margin-top:-43.5%!important}
+#sealrings .ring:nth-child(5){width:100%!important;height:100%!important;margin-left:-50%!important;margin-top:-50%!important}
+
+/* Les anciens pseudo-cercles statiques sont supprimés : seuls les 5 anneaux vivants restent. */
+#sealrings:before{display:none!important}
+
+/* Le système reste pleinement visible après sa naissance. */
+#sealrings.show{opacity:1!important}
+
+/* Sortie finale : aucune keyframe ne force une réapparition. */
+#order.order-depart{
+ opacity:0!important;
+ filter:blur(2px) brightness(.72)!important;
+ transform:translate(-50%,-50%) scale(.975)!important;
+ transition:opacity 6.2s cubic-bezier(.32,0,.22,1),
+            filter 6.2s cubic-bezier(.32,0,.22,1),
+            transform 6.2s cubic-bezier(.32,0,.22,1)!important;
+ animation:none!important;
+}
+#sealrings.order-depart{
+ opacity:0!important;
+ filter:blur(1.8px)!important;
+ transform:translate(-50%,-50%) scale(1.05)!important;
+ transition:opacity 6.6s cubic-bezier(.32,0,.22,1),
+            filter 6.6s cubic-bezier(.32,0,.22,1),
+            transform 6.6s cubic-bezier(.32,0,.22,1)!important;
+ animation:none!important;
+}
+
+
+/* V1.3.2 — RAFFINEMENT DES ANNEAUX */
+#sealrings .ring:nth-child(1){
+  border-color:rgba(246,248,250,.70)!important;
+  animation-duration:8.5s!important;
+}
+#sealrings .ring:nth-child(2){
+  border-color:rgba(244,247,250,.58)!important;
+  animation-duration:13s!important;
+}
+#sealrings .ring:nth-child(3){
+  border-color:rgba(242,246,249,.46)!important;
+  animation-duration:17s!important;
+}
+#sealrings .ring:nth-child(4){
+  border-color:rgba(240,244,248,.29)!important;
+  box-shadow:0 0 8px rgba(255,255,255,.08)!important;
+  animation-duration:22s!important;
+}
+#sealrings .ring:nth-child(5){
+  border-color:rgba(238,243,247,.18)!important;
+  box-shadow:0 0 10px rgba(255,255,255,.045)!important;
+  animation-duration:27s!important;
+}
+
+/* Une impulsion lumineuse voyage ponctuellement sur un arc, sans HUD. */
+#sealrings .ring:nth-child(2)::after,
+#sealrings .ring:nth-child(4)::after{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  border:4px solid transparent;
+  border-top-color:rgba(255,255,255,.72);
+  border-right-color:rgba(255,255,255,.10);
+  filter:drop-shadow(0 0 7px rgba(255,255,255,.28));
+  opacity:0;
+  pointer-events:none;
+}
+#sealrings .ring:nth-child(2)::after{animation:arcPulseA 11s ease-in-out infinite}
+#sealrings .ring:nth-child(4)::after{animation:arcPulseB 15s ease-in-out 4s infinite}
+@keyframes arcPulseA{
+  0%,68%,100%{opacity:0;transform:rotate(-35deg)}
+  72%{opacity:.10}
+  79%{opacity:.52}
+  88%{opacity:.12;transform:rotate(95deg)}
+  92%{opacity:0;transform:rotate(125deg)}
+}
+@keyframes arcPulseB{
+  0%,72%,100%{opacity:0;transform:rotate(120deg)}
+  76%{opacity:.08}
+  82%{opacity:.34}
+  90%{opacity:.08;transform:rotate(235deg)}
+  94%{opacity:0;transform:rotate(260deg)}
+}
+
+/* Sortie finale robuste : un wrapper global se dissout.
+   Cela empêche un état interne du logo ou des anneaux de couper le fondu. */
+#orderFinalGroup{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:1;
+}
+#orderFinalGroup.depart{
+  opacity:0!important;
+  transition:opacity 7s cubic-bezier(.32,0,.22,1)!important;
+}
+
+
+/* V1.3.3 — Anneaux réellement serrés autour de l'emblème */
+#sealrings{
+  width:min(58vw,58vh)!important;
+  aspect-ratio:1!important;
+  left:50%!important;
+  top:49%!important;
+}
+#sealrings .ring:nth-child(1){width:70%!important;height:70%!important;margin-left:-35%!important;margin-top:-35%!important}
+#sealrings .ring:nth-child(2){width:79%!important;height:79%!important;margin-left:-39.5%!important;margin-top:-39.5%!important}
+#sealrings .ring:nth-child(3){width:88%!important;height:88%!important;margin-left:-44%!important;margin-top:-44%!important}
+#sealrings .ring:nth-child(4){width:97%!important;height:97%!important;margin-left:-48.5%!important;margin-top:-48.5%!important}
+#sealrings .ring:nth-child(5){width:106%!important;height:106%!important;margin-left:-53%!important;margin-top:-53%!important}
+
+/* Pas de transition CSS de sortie sur les enfants :
+   Safari/iPad ne peut plus sauter directement à opacity:0. */
+#order.order-depart,#sealrings.order-depart{
+  opacity:inherit!important;
+  animation:none!important;
+  transition:none!important;
+}
+#orderFinalGroup.depart{opacity:1!important;transition:none!important}
+
+
+/* V1.3.4 — corrections ciblées */
+
+/* Les anneaux entourent le logo sans jamais le traverser.
+   Le système est plus grand que l'emblème, avec un vrai espace négatif. */
+#sealrings{
+  width:min(78vw,78vh)!important;
+  height:min(78vw,78vh)!important;
+  left:50%!important;
+  top:49%!important;
+}
+#sealrings .ring:nth-child(1){width:82%!important;height:82%!important;margin-left:-41%!important;margin-top:-41%!important}
+#sealrings .ring:nth-child(2){width:88%!important;height:88%!important;margin-left:-44%!important;margin-top:-44%!important}
+#sealrings .ring:nth-child(3){width:94%!important;height:94%!important;margin-left:-47%!important;margin-top:-47%!important}
+#sealrings .ring:nth-child(4){width:100%!important;height:100%!important;margin-left:-50%!important;margin-top:-50%!important}
+#sealrings .ring:nth-child(5){width:106%!important;height:106%!important;margin-left:-53%!important;margin-top:-53%!important}
+
+/* Pas de flash/sursaut d'opacité à l'arrivée :
+   la naissance ne modifie plus brightness/opacity du système. */
+#sealrings.show{
+  opacity:1!important;
+  animation:ringSystemBirthStable 3.8s cubic-bezier(.16,.75,.22,1) both!important;
+}
+@keyframes ringSystemBirthStable{
+  0%{transform:translate(-50%,-50%) scale(.78)}
+  28%{transform:translate(-50%,-50%) scale(1.035)}
+  62%{transform:translate(-50%,-50%) scale(.992)}
+  100%{transform:translate(-50%,-50%) scale(1)}
+}
+
+/* Une fois la sortie commencée, impossible de réafficher les anneaux. */
+#sealrings.ceremony-ended{
+  opacity:0!important;
+  visibility:hidden!important;
+  animation:none!important;
+}
+
+
+/* V1.3.5 — garde anti-réapparition finale */
+#sealrings.ceremony-ended,
+#order.ceremony-ended{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  animation:none!important;
+  transition:none!important;
+}
+
+
+/* V1.3.6 — anneaux plus organiques et lisibles */
+#sealrings .ring:nth-child(1){
+  animation:ringBreathe136 7.2s ease-in-out infinite alternate!important;
+}
+#sealrings .ring:nth-child(2){
+  animation:ringOrbitA136 10.8s ease-in-out infinite!important;
+}
+#sealrings .ring:nth-child(3){
+  animation:ringOrbitB136 13.6s ease-in-out infinite!important;
+}
+#sealrings .ring:nth-child(4){
+  animation:ringOuter136 17.5s ease-in-out infinite!important;
+}
+#sealrings .ring:nth-child(5){
+  animation:ringOuter2136 21s ease-in-out infinite!important;
+}
+@keyframes ringBreathe136{
+  0%{transform:scale(.955);opacity:.64}
+  100%{transform:scale(1.045);opacity:.90}
+}
+@keyframes ringOrbitA136{
+  0%,100%{transform:rotate(-2.4deg) scaleX(1.025) scaleY(.975)}
+  50%{transform:rotate(2.8deg) scaleX(.975) scaleY(1.025)}
+}
+@keyframes ringOrbitB136{
+  0%,100%{transform:rotate(2.8deg) scale(.965)}
+  48%{transform:rotate(-3.2deg) scale(1.04)}
+  72%{transform:rotate(-.8deg) scale(1.012)}
+}
+@keyframes ringOuter136{
+  0%,100%{transform:scale(.98) rotate(-1.5deg);opacity:.27}
+  50%{transform:scale(1.045) rotate(3deg);opacity:.43}
+}
+@keyframes ringOuter2136{
+  0%,100%{transform:scale(1.035) rotate(2deg);opacity:.16}
+  50%{transform:scale(.975) rotate(-3.2deg);opacity:.28}
+}
+
+/* VERROU NOIR ABSOLU : aucune règle d'anneau ne peut gagner après la fin. */
+html body #sealrings.ceremony-ended,
+html body #order.ceremony-ended{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  animation:none!important;
+  transition:none!important;
+}
+
+
+/* V1.4.0 — OSCILLATION 3D DES CINQ ANNEAUX
+   Le logo reste fixe. Chaque anneau bascule dans l'espace avec une phase différente. */
+#sealrings{
+  perspective:900px!important;
+  transform-style:preserve-3d!important;
+}
+#sealrings .ring{
+  transform-style:preserve-3d!important;
+  backface-visibility:visible!important;
+  will-change:transform,opacity!important;
+}
+#sealrings .ring:nth-child(1){
+  animation:ring3D1 8.8s ease-in-out infinite alternate!important;
+}
+#sealrings .ring:nth-child(2){
+  animation:ring3D2 11.4s ease-in-out -2.1s infinite alternate!important;
+}
+#sealrings .ring:nth-child(3){
+  animation:ring3D3 13.7s ease-in-out -5.2s infinite alternate!important;
+}
+#sealrings .ring:nth-child(4){
+  animation:ring3D4 16.2s ease-in-out -3.4s infinite alternate!important;
+}
+#sealrings .ring:nth-child(5){
+  animation:ring3D5 19.3s ease-in-out -7.1s infinite alternate!important;
+}
+
+@keyframes ring3D1{
+  0%   {transform:rotateX(12deg) rotateY(-8deg) rotateZ(-1deg) scale(.995)}
+  50%  {transform:rotateX(-10deg) rotateY(10deg) rotateZ(1.4deg) scale(1.012)}
+  100% {transform:rotateX(9deg) rotateY(6deg) rotateZ(-.7deg) scale(.998)}
+}
+@keyframes ring3D2{
+  0%   {transform:rotateX(-16deg) rotateY(7deg) rotateZ(1.2deg) scale(1.005)}
+  48%  {transform:rotateX(11deg) rotateY(-12deg) rotateZ(-1.6deg) scale(.992)}
+  100% {transform:rotateX(-8deg) rotateY(10deg) rotateZ(.8deg) scale(1.008)}
+}
+@keyframes ring3D3{
+  0%   {transform:rotateX(9deg) rotateY(15deg) rotateZ(-1.5deg) scale(.994)}
+  52%  {transform:rotateX(-14deg) rotateY(-7deg) rotateZ(1.8deg) scale(1.01)}
+  100% {transform:rotateX(12deg) rotateY(-10deg) rotateZ(-.6deg) scale(.997)}
+}
+@keyframes ring3D4{
+  0%   {transform:rotateX(-11deg) rotateY(-13deg) rotateZ(1deg) scale(1.004)}
+  45%  {transform:rotateX(15deg) rotateY(8deg) rotateZ(-1.3deg) scale(.996)}
+  100% {transform:rotateX(-7deg) rotateY(12deg) rotateZ(.5deg) scale(1.006)}
+}
+@keyframes ring3D5{
+  0%   {transform:rotateX(14deg) rotateY(-10deg) rotateZ(-.8deg) scale(.998)}
+  50%  {transform:rotateX(-9deg) rotateY(14deg) rotateZ(1.1deg) scale(1.008)}
+  100% {transform:rotateX(7deg) rotateY(-13deg) rotateZ(-.4deg) scale(.995)}
+}
+
+/* Les impulsions lumineuses restent attachées à la surface de leur anneau. */
+#sealrings .ring::after{transform-style:preserve-3d}
+
+/* Pendant la sortie finale, aucun mouvement ne peut contrarier le fondu/noir validé. */
+#sealrings.ceremony-ended .ring,
+#sealrings.ceremony-ended .ring::after{
+  animation:none!important;
+}
+@media (prefers-reduced-motion:reduce){
+  #sealrings .ring{animation:none!important}
+}
+
+#ociContinue{position:fixed;left:50%;bottom:max(28px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;opacity:0;pointer-events:none;padding:14px 28px;border:1px solid rgba(235,235,228,.7);background:rgba(0,0,0,.82);color:#eee;font:700 13px "Courier New",monospace;letter-spacing:.16em;transition:opacity 1s ease}#ociContinue.show{opacity:1;pointer-events:auto}
+
+body.oci-terminal-flow #intro,
+body.oci-terminal-flow #testbar,
+body.oci-terminal-flow #choice,
+body.oci-terminal-flow #launch,
+body.oci-terminal-flow #audioTest,
+body.oci-terminal-flow #restart,
+body.oci-terminal-flow #skip,
+body.oci-terminal-flow [onclick*="restart"],
+body.oci-terminal-flow [onclick*="skipToFinal"]{display:none!important}
+
+#ociGate{display:none;position:fixed;inset:0;z-index:999999;background:#000;align-items:center;justify-content:center}
+#ociGate button{padding:15px 28px;border:1px solid rgba(232,229,220,.55);background:#050505;color:#e8e5dc;font:700 12px "Courier New",monospace;letter-spacing:.18em}
+body.oci-terminal-flow #ociGate{display:flex}
+body.oci-terminal-flow.oci-started #ociGate{display:none}
+
+</style>
+</head>
+<body>
+<audio id="theme" preload="auto" playsinline webkit-playsinline src="ceremonie.mp3"></audio>
+<div id="stage">
+ <div id="grain"></div><div id="sweep"></div><div id="orderFinalGroup">
+<div id="sealrings"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div></div><div id="divisionFinal"><img id="divisionFinalImg" alt=""></div>
+ <div id="starfield" aria-hidden="true"></div>
+<canvas id="energyCanvas" aria-hidden="true"></canvas>
+<div class="geometry order-field" id="geo" aria-hidden="true">
+ <div class="field-grid"></div>
+ <div class="field-arc arc1"></div><div class="field-arc arc2"></div>
+ <div class="division-layer eye"><i class="sight h1"></i><i class="sight h2"></i><i class="sight v1"></i><i class="point p1"></i><i class="point p2"></i><i class="point p3"></i></div>
+ <div class="division-layer flame"><i class="route r1"></i><i class="route r2"></i><i class="route r3"></i></div>
+ <div class="division-layer hand"><i class="branch b1"></i><i class="branch b2"></i><i class="branch b3"></i><i class="branch b4"></i></div>
+ <div class="division-layer spiral"><i class="trace t1"></i><i class="trace t2"></i><i class="trace t3"></i></div>
+ <div class="division-layer hourglass"><i class="contain c1"></i><i class="contain c2"></i><i class="contain c3"></i></div>
+ <div class="field-core"></div>
+</div>
+ <div id="symbols">
+  <div class="symbol" id="s1"><img src="division-1-oeil-fendu.png?v=204"></div>
+  <div class="symbol" id="s2"><img src="division-2-flamme-inversee.png?v=204"></div>
+  <div class="symbol" id="s3"><img src="division-3-main-cassee.png?v=204"></div>
+  <div class="symbol" id="s4"><img src="division-4-spirale-os.png?v=204"></div>
+  <div class="symbol" id="s5"><img src="division-5-sablier-noir.png?v=204"></div>
+ </div>
+ <div class="order" id="order"><img src="order-logo.png?v=204"></div>
+</div>
+ <div id="caption"></div>
+ <div id="finalLogo"></div>
+ <div id="status"><div class="statusbox">
+   <div class="row"><span>MATRICULE</span><span id="mat">OCI-26-XXXXX</span></div>
+   <div class="row"><span>STATUT</span><span id="stat">CANDIDAT</span></div>
+   <div class="row"><span>ACCRÉDITATION</span><span id="acc">—</span></div>
+   <div class="row"><span>DIVISION</span><span id="division">—</span></div>
+ </div></div>
+ <div class="flash" id="flash"></div>
+<div id="vignette"></div></div>
+
+<div id="intro">
+ <div class="panel">
+  <div class="kicker">MODULE AUTONOME // PRODUCTION</div>
+  <h1>D000 — CÉRÉMONIE D'INITIATION</h1>
+  <p>V0.3 — emblèmes officiels couleur, convergence propre et affectation sans superposition. Aucun son. Les emblèmes restent monochromes jusqu'à l'affectation finale.</p>
+  <div class="controls">
+   <select id="choice">
+    <option value="oeil">ŒIL FENDU</option>
+    <option value="flamme">FLAMME INVERSÉE</option>
+    <option value="main">MAIN CASSÉE</option>
+    <option value="spirale">SPIRALE D'OS</option>
+    <option value="sablier">SABLIER NOIR</option>
+   </select>
+   <button id="launch">LANCER LA CÉRÉMONIE</button><button type="button" onclick="testAudio()" style="margin-left:10px">TEST AUDIO 5 s</button>
+  </div>
+ </div>
+</div>
+<div id="testbar"><button onclick="restart()">REJOUER</button><button onclick="skipToFinal()">AFFECTATION</button></div>
+
+<script>
+const divisions={
+ oeil:{name:"ŒIL FENDU",color:"#d9e8ff",img:"division-1-oeil-fendu.png?v=204"},
+ flamme:{name:"FLAMME INVERSÉE",color:"#d44b45",img:"division-2-flamme-inversee.png?v=204"},
+ main:{name:"MAIN CASSÉE",color:"#d5ad62",img:"division-3-main-cassee.png?v=204"},
+ spirale:{name:"SPIRALE D'OS",color:"#8eaa92",img:"division-4-spirale-os.png?v=204"},
+ sablier:{name:"SABLIER NOIR",color:"#8e74bb",img:"division-5-sablier-noir.png?v=204"}
+};
+let timers=[], selected="oeil", audioTestTimer=null;
+const $=id=>document.getElementById(id);
+function later(ms,fn){timers.push(setTimeout(fn,ms))}
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+function cap(txt,ms=4200){$("caption").textContent=txt;$("caption").classList.add("show");later(ms,()=>$("caption").classList.remove("show"))}
+
+
+
+function revealOrderRingsAfterExplosion(){
+  const rings=$("sealrings");
+  rings.classList.remove("show","final-fade");
+  rings.style.opacity="0";
+  rings.style.transition="none";
+  setTimeout(()=>{
+    rings.classList.add("show");
+    requestAnimationFrame(()=>{
+      rings.style.transition="opacity 2.4s ease";
+      rings.style.opacity="1";
+    });
+  },1700);
+}
+
+const energy={
+ canvas:null,ctx:null,w:0,h:0,dpr:1,active:0,phase:"flow",start:0,raf:0,
+ colors:["#cfe9ff","#ff5d42","#ffd45e","#83d59a","#a978e8"],born:[0,0,0,0,0],
+ resize(){
+   this.dpr=Math.min(window.devicePixelRatio||1,2);
+   this.w=innerWidth;this.h=innerHeight;
+   this.canvas.width=this.w*this.dpr;this.canvas.height=this.h*this.dpr;
+   this.canvas.style.width=this.w+"px";this.canvas.style.height=this.h+"px";
+   this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+ },
+ init(){
+   this.canvas=document.getElementById("energyCanvas");this.ctx=this.canvas.getContext("2d");
+   this.resize();window.addEventListener("resize",()=>this.resize());
+   this.start=performance.now();this.loop();
+ },
+ add(i){
+   this.active=Math.max(this.active,i);
+   if(!this.born[i-1])this.born[i-1]=performance.now();
+   this.canvas.classList.add("on")
+ },
+ fuse(){this.phase="fuse";this.fuseAt=performance.now()},
+ burst(){
+   this.phase="burst";this.burstAt=performance.now();
+   revealOrderRingsAfterExplosion();
+   this.active=0;
+   this.canvas.classList.remove("on");
+ },
+ clear(){this.active=0;this.born=[0,0,0,0,0];this.phase="flow";this.canvas&&this.canvas.classList.remove("on")},
+ curve(i,t,offset){
+   const ctx=this.ctx,w=this.w,h=this.h,cx=w/2,cy=h/2;
+   const amp=h*(.075+.009*i);
+   const ybase=h*(.38+i*.058);
+   const dir=i%2?1:-1;
+   const drift=Math.sin(t*.00034+i*1.15+offset)*w*.020;
+   ctx.beginPath();
+   for(let x=-40;x<=w+40;x+=18){
+     const u=x/w;
+     let y=ybase
+       +Math.sin(u*Math.PI*2.0+t*.00115*dir+i*.82+offset)*amp
+       +Math.sin(u*Math.PI*4.2-t*.00062+i)*amp*.24;
+     let xx=x+drift*Math.sin(u*Math.PI);
+     if(this.phase==="fuse"){
+       const q=Math.min(1,(performance.now()-this.fuseAt)/5200);
+       const pull=Math.sin(u*Math.PI)*q;
+       xx=xx+(cx-xx)*pull*.68;
+       y=y+(cy-y)*pull*.82;
+     }
+     if(x===-40)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);
+   }
+   ctx.stroke();
+ },
+ loop(){
+   const ctx=this.ctx,t=performance.now();
+   ctx.clearRect(0,0,this.w,this.h);
+   ctx.globalCompositeOperation="lighter";
+   for(let i=0;i<this.active;i++){
+     const col=this.colors[i];
+     const born=this.born[i]||t;
+     const entrance=Math.max(0,Math.min(1,(t-born)/4200));
+     const soft=entrance*entrance*(3-2*entrance);
+     ctx.save(); ctx.globalAlpha=soft;
+     for(let k=0;k<4;k++){
+       ctx.save();
+       ctx.strokeStyle=col;
+       ctx.globalAlpha=k===0?.25:(.095-k*.012);
+       ctx.lineWidth=k===0?1.25:3+k*2.4;
+       ctx.shadowColor=col;ctx.shadowBlur=k===0?10:15;
+       this.curve(i,t,k*.48);
+       ctx.restore();
+     }
+     // traveling sparks riding each flow
+     for(let n=0;n<7;n++){
+       const u=((t*.000055*(1+i*.08)+n/7+i*.13)%1);
+       const x=u*this.w;
+       const amp=this.h*(.075+.009*i), ybase=this.h*(.38+i*.058);
+       const y=ybase+Math.sin(u*Math.PI*2+t*.00115*(i%2?1:-1)+i*.82)*amp;
+       ctx.fillStyle=col;ctx.globalAlpha=.20;
+       ctx.beginPath();ctx.arc(x,y,1.2+(n%3)*.35,0,Math.PI*2);ctx.fill();
+     }
+     ctx.restore();
+   }
+   if(this.phase==="burst"){
+     const q=(t-this.burstAt)/1000,cx=this.w/2,cy=this.h/2;
+     if(q<1.3){
+       const a=Math.max(0,1-q/1.3);
+       const g=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(this.w,this.h)*.32*q);
+       g.addColorStop(0,`rgba(255,255,255,${.95*a})`);
+       g.addColorStop(.12,`rgba(255,255,255,${.48*a})`);
+       g.addColorStop(1,"rgba(255,255,255,0)");
+       ctx.fillStyle=g;ctx.fillRect(0,0,this.w,this.h);
+     }
+     for(let r=0;r<4;r++){
+       const age=q-r*.13;
+       if(age>0&&age<2.4){
+         ctx.beginPath();ctx.arc(cx,cy,age*Math.min(this.w,this.h)*.19,0,Math.PI*2);
+         ctx.strokeStyle="rgba(245,247,246,"+(Math.max(0,.65-age*.25))+")";
+         ctx.lineWidth=1.4;ctx.shadowColor="#fff";ctx.shadowBlur=12;ctx.stroke();
+       }
+     }
+   }
+   this.raf=requestAnimationFrame(()=>this.loop());
+ }
+};
+energy.init();
+
+function buildStars(){
+ const f=document.getElementById("starfield"); if(!f||f.children.length)return;
+ let seed=1705;
+ const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+ for(let i=0;i<72;i++){
+   const e=document.createElement("i"); e.className="star"+(i%13===0?" big":"");
+   e.style.left=(3+rnd()*94)+"%"; e.style.top=(4+rnd()*90)+"%";
+   e.style.setProperty("--dur",(4.8+rnd()*5.8)+"s");
+   e.style.setProperty("--delay",(-rnd()*8)+"s"); f.appendChild(e);
+ }
+}
+buildStars();
+
+function reset(){
+ const __ord=$("order"),__rng=$("sealrings");
+ [__ord,__rng].forEach(el=>{
+   el.classList.remove("ceremony-ended");
+   el.style.removeProperty("display");
+   el.style.removeProperty("visibility");
+   el.style.removeProperty("opacity");
+ });
+
+ const _o=$("order"),_r=$("sealrings");
+ _r.classList.remove("ceremony-ended"); _o.classList.remove("ceremony-ended");
+ _r.style.visibility="";
+ _r.style.opacity="";
+ _o.style.visibility="";
+ _o.style.opacity="";
+
+ ["order","sealrings"].forEach(id=>{
+   const el=$(id);
+   if(el && el.getAnimations) el.getAnimations().forEach(a=>a.cancel());
+ });
+ $("orderFinalGroup").classList.remove("depart");
+ $("order").classList.remove("final-fade","order-depart");$("sealrings").classList.remove("final-fade","order-depart","show");$("sealrings").style.opacity="0";$("sealrings").style.transition="";
+ energy.clear(); $("starfield").className="";
+ clearTimers();
+ ["s1","s2","s3","s4","s5"].forEach(id=>$(id).className="symbol");
+ $("order").className="order";$("order").style.display="";$("divisionFinal").className="";$("divisionFinalImg").src=""; $("geo").style.opacity=0;$("sweep").className="";$("sealrings").className="";$("caption").className="";
+ $("status").className="";$("finalLogo").className="";$("finalLogo").innerHTML="";
+ $("stat").textContent="CANDIDAT";$("acc").textContent="—";$("division").textContent="—";
+ document.documentElement.style.setProperty("--accent","#d9d4c7");
+}
+function showSymbol(i,text){
+ if(i===1){$("starfield").className="out";} energy.add(i);
+ $("geo").className="geometry order-field stage"+i;
+ const el=$("s"+i); el.classList.add("show","awake"); cap(text,3200);
+ later(5600,()=>el.classList.add("orbit"));
+}
+function ceremony(){
+ reset(); $("intro").style.display="none"; $("testbar").style.display="flex";
+
+ // V0.5 — synchronisation sur The Five-Note Seal (3:29.7)
+ // Partie I : montée / révélation du monde
+ later(2200,()=>{$("starfield").className="fade";$("geo").className="geometry order-field opening-presence";$("geo").style.opacity=0});
+ later(8000,()=>cap("DEPUIS QUE L'HOMME OBSERVE LE MONDE, IL CROIT REGARDER LA RÉALITÉ.",5200));
+ later(13700,()=>cap("IL N'EN PERÇOIT QU'UNE VERSION.",3800));
+ later(39000,()=>cap("DEPUIS DES SIÈCLES, CERTAINS ONT APPRIS À RECONNAÎTRE CE QUE D'AUTRES NE POUVAIENT VOIR.",9000));
+
+ // Partie II : les cinq Ombres, chacune disposant de son espace musical
+ later(60000,()=>showSymbol(1,"CERTAINS ONT OBSERVÉ."));
+ later(76000,()=>showSymbol(2,"CERTAINS ONT ADAPTÉ."));
+ later(91000,()=>showSymbol(3,"CERTAINS ONT ANTICIPÉ."));
+ later(107000,()=>showSymbol(4,"CERTAINS ONT PRÉSERVÉ."));
+ later(122000,()=>showSymbol(5,"CERTAINS ONT CONTENU CE QUI NE DEVAIT PAS FRANCHIR LA LIMITE."));
+
+ // Charnière : les cinq deviennent l'Ordre
+ later(135000,()=>{$("geo").className="geometry order-field stage5 complete";cap("SÉPARÉES, ELLES SONT CINQ.",4500)});
+ later(143000,()=>{
+   ["s1","s2","s3","s4","s5"].forEach((id,k)=>later(k*160,()=>$(id).classList.add("converge")));
+   
+   later(6200,()=>["s1","s2","s3","s4","s5"].forEach(id=>$(id).classList.add("vanish")));
+ });
+ later(148000,()=>cap("ENSEMBLE… ELLES SONT L'ORDRE.",5200));
+
+ // Partie III : apogée. Plus aucune narration.
+ later(151000,()=>{
+   $("flash").classList.remove("go"); void $("flash").offsetWidth; $("flash").classList.add("go");
+   energy.burst();
+
+$("order").classList.add("show","reveal");$("geo").style.opacity=.14;
+ });
+
+ // L'emblème reste seul pendant tout l'apogée, puis commence sa disparition
+ // sur la vraie redescente finale du morceau.
+ later(198000,()=>{
+   $("geo").style.opacity=.08;
+
+   /* Fondu piloté image par image par le navigateur.
+      On part de l'état ACTUEL, sans ajouter une classe qui impose opacity:0. */
+   const orderEl=$("order");
+   const ringsEl=$("sealrings");
+
+   orderEl.classList.remove("order-depart","final-fade","exit");
+   ringsEl.classList.remove("order-depart","final-fade");
+
+   const orderOpacity=parseFloat(getComputedStyle(orderEl).opacity)||1;
+   const ringsOpacity=parseFloat(getComputedStyle(ringsEl).opacity)||1;
+
+   orderEl.animate(
+     [
+       {opacity:orderOpacity,filter:"blur(0px) brightness(1)",transform:"translate(-50%,-50%) scale(1)"},
+       {opacity:orderOpacity*.72,offset:.38},
+       {opacity:orderOpacity*.32,filter:"blur(.5px) brightness(.88)",offset:.72},
+       {opacity:0,filter:"blur(2px) brightness(.72)",transform:"translate(-50%,-50%) scale(.975)"}
+     ],
+     {duration:7000,easing:"cubic-bezier(.32,0,.22,1)",fill:"forwards"}
+   );
+
+   ringsEl.animate(
+     [
+       {opacity:ringsOpacity,filter:"blur(0px)",transform:"translate(-50%,-50%) scale(1)"},
+       {opacity:ringsOpacity*.68,offset:.42},
+       {opacity:ringsOpacity*.28,offset:.76},
+       {opacity:0,filter:"blur(1.6px)",transform:"translate(-50%,-50%) scale(1.045)"}
+     ],
+     {duration:7200,easing:"cubic-bezier(.32,0,.22,1)",fill:"forwards"}
+   );
+
+   /* Verrouillage définitif de fin : aucune animation ultérieure ne peut
+      faire réapparaître les anneaux ou le logo. */
+   const lockFinalVisual=()=>{
+     /* Le fondu est terminé : on détruit tous les états animés AVANT le noir. */
+     [ringsEl,orderEl].forEach(el=>{
+       if(el.getAnimations) el.getAnimations({subtree:true}).forEach(a=>a.cancel());
+       el.classList.add("ceremony-ended");
+       el.style.setProperty("opacity","0","important");
+       el.style.setProperty("visibility","hidden","important");
+       el.style.setProperty("display","none","important");
+     });
+   };
+   /* Verrou avant toute transition d'écran suivante. */
+   setTimeout(lockFinalVisual,6750);
+ });
+
+ // Fin musicale ~209.7 s : noir absolu, puis respiration.
+ later(209700,()=>{
+   
+   $("geo").style.opacity=0;
+ });
+
+ // La musique accomplit l'initiation jusqu'à sa dernière note.
+ // Noir bref après la fin, puis l'Ordre officialise l'affectation.
+
+ later(210900,()=>showFinal());
+}
+function showFinal(){
+ const d=divisions[selected];
+ document.documentElement.style.setProperty("--accent",d.color);
+ $("status").classList.add("show");
+ later(1800,()=>{$("stat").textContent="INITIÉ"});
+ later(3800,()=>{$("acc").textContent="OMBRE I"});
+ later(5900,()=>{
+   $("division").textContent=d.name;$("division").style.color=d.color;
+   $("finalLogo").className="";
+   $("finalLogo").innerHTML="";
+   $("divisionFinalImg").src=d.img;
+   $("divisionFinal").classList.add("show");
+ });
+ later(9000,()=>cap("BIENVENUE PARMI LES CINQ OMBRES… INITIÉ.",6500));
+ later(11800,()=>{const b=$("ociContinue");b.classList.add("show");b.onclick=()=>{try{sessionStorage.setItem("OCI_CEREMONY_RESULT",(__ociPayload.mode==="replay"?"replay":"complete"))}catch(e){} location.href="index.html?v=203";};});
+ 
+}
+function restart(){reset();$("intro").style.display="flex";$("testbar").style.display="none"}
+function skipToFinal(){reset();$("intro").style.display="none";$("testbar").style.display="flex";showFinal()}
+$("launch").onclick=()=>{
+  selected=$("choice").value;
+  if(audioTestTimer){clearTimeout(audioTestTimer);audioTestTimer=null;}
+  const a=$("theme");
+  a.pause();
+  a.currentTime=0;
+  a.muted=false;
+  a.volume=1;
+  a.play().then(()=>ceremony()).catch(e=>alert("Erreur audio : "+e.message));
+};
+
+
+
+function testAudio(){
+ const a=$("theme");
+ if(audioTestTimer){clearTimeout(audioTestTimer);}
+ a.pause();a.currentTime=0;a.muted=false;a.volume=1;
+ a.play().then(()=>{
+   audioTestTimer=setTimeout(()=>{a.pause();a.currentTime=0;audioTestTimer=null;},5000);
+ }).catch(e=>alert("Erreur audio : "+e.message));
+}
+
+
+/* TERMINAL BRIDGE V2.0.3 — données seulement, moteur V1.4.0 inchangé */
+let __ociPayload={};
+try{__ociPayload=JSON.parse(sessionStorage.getItem("OCI_CEREMONY_PAYLOAD")||"{}")}catch(e){}
+function __ociDivisionKey(name){
+ const n=(name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase();
+ if(n.includes("OEIL"))return"oeil"; if(n.includes("FLAMME"))return"flamme";
+ if(n.includes("MAIN"))return"main"; if(n.includes("SPIRALE"))return"spirale";
+ if(n.includes("SABLIER"))return"sablier"; return"oeil";
+}
+try{
+ if(__ociPayload && __ociPayload.matricule) document.body.classList.add("oci-terminal-flow");
+ selected=__ociDivisionKey(__ociPayload.division);
+ $("choice").value=selected;
+ $("mat").textContent=__ociPayload.matricule||"OCI-26-XXXXX";
+}catch(e){}
+
+try{
+ const __enter=$("ociEnter");
+ if(__enter && document.body.classList.contains("oci-terminal-flow")){
+   __enter.onclick=()=>{
+     selected=__ociDivisionKey(__ociPayload.division);
+     const a=$("theme");
+     if(audioTestTimer){clearTimeout(audioTestTimer);audioTestTimer=null;}
+     a.pause();a.currentTime=0;a.muted=false;a.volume=1;
+     // Visual timeline begins on the exact same user gesture as audio.
+     document.body.classList.add("oci-started");
+     const p=a.play();
+     ceremony();
+     if(p && p.catch) p.catch(e=>console.warn("Audio ceremony:",e));
+   };
+ }
+}catch(e){}
+</script>
+<button id="ociContinue">CONTINUER</button>
+<div id="ociGate"><button id="ociEnter">ENTRER</button></div>
+
+<script>
+window.addEventListener("load", function(){
+ var b=document.getElementById("ociEnter");
+ if(!b || !document.body.classList.contains("oci-terminal-flow")) return;
+ b.onclick=function(){
+   if(document.body.classList.contains("oci-started")) return;
+   selected=__ociDivisionKey(__ociPayload.division);
+   document.body.classList.add("oci-started");
+   var a=document.getElementById("theme");
+   if(audioTestTimer){clearTimeout(audioTestTimer);audioTestTimer=null;}
+   a.pause();a.currentTime=0;a.muted=false;a.volume=1;
+   var pp=a.play();
+   ceremony();
+   if(pp && pp.catch) pp.catch(function(e){console.warn("Audio ceremony:",e);});
+ };
+});
+</script>
+</body></html>
+<!-- V1.3.4: no asset changes -->
