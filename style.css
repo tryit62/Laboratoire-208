@@ -1102,3 +1102,15 @@ body.initiated .init-id>*{min-width:0}
 #ordre-update-banner .update-actions{display:flex;flex-wrap:wrap;gap:8px}
 #ordre-update-banner button{background:#131a15;border:1px solid #687469;color:#e6ede7;font:inherit;font-size:11px;padding:12px;min-height:44px;cursor:pointer;flex:1}
 #ordre-update-banner button:disabled{opacity:.55}
+
+/* V210 — signal des transmissions et boîte unique */
+.ordre-v210-indicator{position:fixed;z-index:300;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));width:min(92%,570px);padding:12px 16px;background:#1c261e;border:1px solid #7c947c;color:#f4f8f1;font:12px "Courier New",monospace;letter-spacing:.055em;cursor:pointer;box-shadow:0 4px 25px #000b;text-align:center}
+.ordre-v210-indicator[hidden]{display:none}
+.ordre-v210-list{display:grid;gap:8px;margin:15px 0}
+.ordre-v210-mail{display:flex;align-items:center;gap:13px;text-align:left}
+.ordre-v210-mail strong,.ordre-v210-mail small{display:block}
+.ordre-v210-mail small{margin-top:5px;color:#a1aaa0;font-size:10px}
+.ordre-v210-dot{color:#a3a9a0;font-size:16px}
+.ordre-v210-unread{border-color:#8f9d82;background:#141b15}
+.ordre-v210-unread .ordre-v210-dot{color:#d6be7d}
+.ordre-v210-toast{position:fixed;z-index:310;bottom:max(22px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(92%,550px);background:#171e18;border:1px solid #b5a56b;color:#eee6c9;padding:18px;font-size:11px;text-align:center;cursor:pointer;box-shadow:0 8px 30px #000b}

@@ -254,7 +254,7 @@ function initiateHome(){
    <div class="mission-status"><span>DOSSIER ACTIF</span><strong>AUCUNE AFFECTATION OPÉRATIONNELLE</strong><small>Votre intégration au réseau est en cours.</small></div>
    <div class="init-grid">
     <button onclick="initiateMissions()"><b>MISSIONS</b><span>Aucune affectation</span></button>
-    <button onclick="initiateMessages()"><b>MESSAGERIE</b><span class="unread">${unreadMailCount()} NOUVEAU${unreadMailCount()>1?'X':''} MESSAGE${unreadMailCount()>1?'S':''}</span></button>
+    <button onclick="initiateMessages()"><b>MESSAGERIE</b><span class="unread">${ordreV210UnreadCount()} NON LU(S)</span></button>
     <button onclick="initiateArchives()"><b>ARCHIVES</b><span>ACCÈS OMBRE I</span></button>
     <button onclick="initiateProfile()"><b>DOSSIER PERSONNEL</b><span>DOSSIER 000 // CLÔTURÉ</span></button>
    </div>
@@ -272,7 +272,7 @@ const INITIATE_MESSAGES=[
 ];
 function readMailSet(){if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];return new Set(S.initieMessagesLus)}
 function unreadMailCount(){const r=readMailSet();return INITIATE_MESSAGES.filter((_,i)=>!r.has(i)).length}
-function initiateMessages(){
+function initiateMessages(){ordreV210Inbox();return;
  const read=readMailSet(), unread=unreadMailCount();
  shell(`<h1 class="title">MESSAGERIE</h1><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>${unread} NON LU${unread>1?'S':''}</b></div><div class="mail-inbox">${INITIATE_MESSAGES.map((m,i)=>{const from=typeof m.from==='function'?m.from():m.from;const isUnread=!read.has(i);return `<button class="mail-row ${isUnread?'unread-mail':'read-mail'}" onclick="openInitiateMessage(${i})"><span class="mail-status">${isUnread?'●':'○'}</span><span class="mail-from">${from}</span><span class="mail-subject"><b>${m.subject}</b><small>${m.preview}</small></span><span class="mail-date">${m.date}</span></button>`}).join('')}</div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MESSAGERIE // BOÎTE DE RÉCEPTION');
 }
@@ -417,7 +417,7 @@ function home(){
         <div class="home-menu">
           <button class="nav-card" data-go="dossier"><span class="nav-mark">▱</span><span class="nav-title">DOSSIER 000</span><span class="nav-sub">RECRUTEMENT</span><span class="nav-arrow">›</span><span class="nav-index">01</span></button>
           <button class="nav-card" data-go="evals"><span class="nav-mark">◉</span><span class="nav-title">ÉVALUATIONS</span><span class="nav-sub">${S.progression} / 5</span><span class="nav-arrow">›</span><span class="nav-index">02</span></button>
-          <button class="nav-card" data-go="messages"><span class="nav-mark">□</span><span class="nav-title">MESSAGERIE</span><span class="nav-sub">${S.messages?S.messages+' NOUVEAU MESSAGE':'AUCUN NOUVEAU MESSAGE'}</span><span class="nav-arrow">›</span><span class="nav-index">03</span></button>
+          <button class="nav-card" data-go="messages"><span class="nav-mark">□</span><span class="nav-title">MESSAGERIE</span><span class="nav-sub">${ordreV210UnreadCount()} NON LU(S)</span><span class="nav-arrow">›</span><span class="nav-index">03</span></button>
           <button class="nav-card" data-go="archives"><span class="nav-mark">≡</span><span class="nav-title">ARCHIVES</span><span class="nav-sub">ACCÈS REFUSÉ</span><span class="nav-arrow">›</span><span class="nav-index">04</span></button>
           ${S.eval5.complete&&!S.affectationDone?`<button class="nav-card assignment-card" id="assignment"><span class="nav-mark">◇</span><span class="nav-title">AFFECTATION</span><span class="nav-sub">PROCÉDURE DISPONIBLE</span><span class="nav-arrow">›</span><span class="nav-index">05</span></button>`:''}
           ${S.affectationDone&&!S.serment&&S.sermentDisponible?`<button class="nav-card oath-resume-card" id="resumeOath"><span class="nav-mark">◇</span><span class="nav-title">SERMENT</span><span class="nav-sub">VALIDATION EN ATTENTE</span><span class="nav-arrow">›</span><span class="nav-index">05</span></button>`:''}
@@ -1426,7 +1426,7 @@ function assignmentConfirmed(){
   shell(`<div class="assignment-final"><div class="terminal">AFFECTATION PROVISOIRE CONFIRMÉE.</div><img class="assignment-symbol" src="${d.img}" alt=""><div class="assignment-name">${d.name}</div><div class="assignment-verb">${d.verb}</div><p class="assignment-line">${d.line}</p><button class="btn primary" id="afterAccess">[ ACCÉDER À « APRÈS » ]</button></div>`,'AFFECTATION // CONFIRMÉE');
   $('#afterAccess').onclick=assignmentAfter;
 }
-function messages(){S.messages=0;save();shell(`<h1 class="title">MESSAGERIE</h1><div class="msg"><b>SUPERVISION — 000</b><p>Le matériel déclaré a été enregistré.</p><p>Procédez au Module I.</p><span class="tiny">AUCUNE RÉPONSE REQUISE.</span></div>${back()}`);wireBack()}
+function messages(){ordreV210Inbox();return;S.messages=0;save();shell(`<h1 class="title">MESSAGERIE</h1><div class="msg"><b>SUPERVISION — 000</b><p>Le matériel déclaré a été enregistré.</p><p>Procédez au Module I.</p><span class="tiny">AUCUNE RÉPONSE REQUISE.</span></div>${back()}`);wireBack()}
 function archives(){shell(`<h1 class="title">ARCHIVES CENTRALES</h1><div class="terminal">VÉRIFICATION DES DROITS...\n\nSTATUT : CANDIDAT\nACCRÉDITATION : 0\n\nACCÈS REFUSÉ.\n\nLA TENTATIVE D'ACCÈS A ÉTÉ CONSIGNÉE.</div>${back()}`,'ACCÈS REFUSÉ');wireBack()}
 function assistance(){shell(`<h1 class="title">SOLLICITER LE SUPERVISEUR</h1><p class="sub">MOTIF DE LA SOLLICITATION</p><div class="menu"><button class="btn help">> INSTRUCTION INCOMPRISE</button><button class="btn help">> MATÉRIEL NON IDENTIFIÉ</button><button class="btn help">> BLOCAGE DANS LE PROTOCOLE</button><button class="btn help">> SIGNALER UNE IRRÉGULARITÉ</button></div><div id="helpmsg" class="system"></div>${back()}`);document.querySelectorAll('.help').forEach(b=>b.onclick=()=>{$('#helpmsg').textContent='SYS // DEMANDE ENREGISTRÉE — SUPERVISION NOTIFIÉE'});wireBack()}
 function profile(){shell(`<h1 class="title">PROFIL</h1><div class="kv"><b>IDENTIFIANT</b><span>${S.matricule}</span><b>STATUT</b><span>${S.serment?'INITIÉ':'CANDIDAT'}</span><b>ACCRÉDITATION</b><span>${S.serment?'OMBRE I':'0'}</span><b>DIVISION</b><span>${S.affectationDone?S.affectation:'—'}</span><b>DOSSIERS TERMINÉS</b><span>${S.serment?'1':'0'}</span></div><div class="rule"></div><div class="terminal">${S.serment?'PROTOCOLE 000 CLÔTURÉ — ACCÈS OMBRE I ACTIF':(S.affectationDone?'AFFECTATION PROVISOIRE CONFIRMÉE — SERMENT EN ATTENTE':'AFFECTATION EN ATTENTE')}</div>${back()}`);wireBack()}
@@ -1640,6 +1640,65 @@ function ordreV2Orders(){
  $('#v2Back').onclick=()=>S.serment?initiateHome():home();
 }
 // Persistent, separate access point; does not rewrite the canonical evaluation/mission story.
-function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Comms">[ TRANSMISSIONS DU RÉSEAU ]</button><button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Comms').onclick=()=>{ordreV2Refresh().then(ordreV2Messages)};el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
+function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
 const ordreV2NativeShell=shell;
 shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton()};
+
+
+/* V210 BÊTA : boîte unique locale + distant, non-lus et reçu de lecture sécurisé. */
+function ordreV210Escape(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function ordreV210UnreadCount(){
+ const r=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
+ const remote=r.filter(m=>!m.read_at).length;
+ return (S.serment?unreadMailCount():(S.messages?1:0))+remote;
+}
+function ordreV210UnreadIds(){return (S.reseauMessages||[]).filter(m=>!m.read_at).map(m=>m.id)}
+let ordreV210LastUnreads=null;
+function ordreV210Decorate(){
+ if(!ordreAuth?.player_id||ADMIN_MODE||S.matricule!==ordreAuth.matricule)return;
+ const count=ordreV210UnreadCount();
+ document.querySelectorAll('[data-go="messages"] .nav-sub').forEach(x=>x.textContent=count+' NON LU(S)');
+ document.querySelectorAll('.init-grid button').forEach(x=>{if(x.getAttribute('onclick')==='initiateMessages()'){const t=x.querySelector('span');if(t)t.textContent=count+' NON LU(S)'}});
+ let bar=document.getElementById('ordreV210Indicator');
+ if(!bar){bar=document.createElement('button');bar.type='button';bar.id='ordreV210Indicator';bar.className='ordre-v210-indicator';bar.onclick=ordreV210Inbox;document.body.append(bar)}
+ bar.hidden=!count;bar.textContent='● NOUVELLE TRANSMISSION // '+count+' NON LU(S)';
+}
+function ordreV210Inbox(){
+ const msgs=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
+ const candidateLegacy=!S.serment&&!!S.messages;
+ const builtIn=S.serment?INITIATE_MESSAGES.map((m,i)=>({kind:'builtin',i,subject:m.subject,from:typeof m.from==='function'?m.from():m.from,unread:!readMailSet().has(i)})):(candidateLegacy?[{kind:'candidate',subject:'SUPERVISION — 000',from:'SUPERVISION',unread:true}]:[]);
+ const remote=msgs.map(m=>({kind:'remote',msg:m,subject:m.subject,from:'CENTRE DE COMMANDEMENT',unread:!m.read_at}));
+ const rows=[...remote,...builtIn];
+ shell('<h1 class="title">MESSAGERIE</h1><p class="sub">TRANSMISSIONS INSTITUTIONNELLES ET COMMUNICATIONS DU RÉSEAU</p><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>'+ordreV210UnreadCount()+' NON LU(S)</b></div><div class="ordre-v210-list" id="ordreV210List"></div><button class="btn back" id="ordreV210Back">[ RETOUR ]</button>','MESSAGERIE // RÉSEAU');
+ const el=document.getElementById('ordreV210List');
+ if(!rows.length)el.textContent='AUCUN MESSAGE.';
+ rows.forEach(r=>{const b=document.createElement('button');b.className='btn ordre-v210-mail'+(r.unread?' ordre-v210-unread':'');b.innerHTML='<span class="ordre-v210-dot">'+(r.unread?'●':'○')+'</span><span><strong>'+ordreV210Escape(r.subject)+'</strong><small>'+ordreV210Escape(r.from)+'</small></span>';b.onclick=()=>{if(r.kind==='remote')ordreV210OpenRemote(r.msg);else if(r.kind==='builtin')openInitiateMessage(r.i);else ordreV210OpenCandidate()};el.append(b)});
+ document.getElementById('ordreV210Back').onclick=()=>S.serment?initiateHome():home();
+}
+function ordreV210OpenCandidate(){S.messages=0;save();shell('<h1 class="title">SUPERVISION — 000</h1><div class="msg"><p>Le matériel déclaré a été enregistré.</p><p>Procédez au Module I.</p><span class="tiny">AUCUNE RÉPONSE REQUISE.</span></div><button class="btn" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>');document.getElementById('ordreV210Back').onclick=ordreV210Inbox}
+async function ordreV210OpenRemote(m){
+ shell('<h1 class="title" id="ordreV210Subject"></h1><p class="sub">CENTRE DE COMMANDEMENT // TRANSMISSION INDIVIDUELLE</p><div class="terminal" id="ordreV210Body"></div><button class="btn back" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>','MESSAGERIE // LECTURE');
+ document.getElementById('ordreV210Subject').textContent=m.subject;
+ document.getElementById('ordreV210Body').textContent=m.body;
+ document.getElementById('ordreV210Back').onclick=ordreV210Inbox;
+ if(m.read_at)return;
+ try{
+  const token=await ordreValidToken();if(!token)return;
+  const confirmed=await ordreNetFetch('/rest/v1/rpc/v210_mark_message_read',{method:'POST',token,body:JSON.stringify({p_message:m.id})});
+  if(confirmed){m.read_at=new Date().toISOString();profileSave();ordreV210Decorate()}
+ }catch(e){console.warn('Accusé de lecture différé :',e.message)}
+}
+// Preserve V209 poll and refresh; repaint only when message count changes, without rerendering active screens.
+const ordreV210OriginalPoll=ordreV2Poll;
+ordreV2Poll=async function(){
+ const old=ordreV210UnreadIds().join(',');await ordreV210OriginalPoll();
+ const current=ordreV210UnreadIds().join(',');
+ if(old!==current&&ordreV210LastUnreads!==null&&current.length>old.length&&document.visibilityState==='visible'){
+  const alert=document.createElement('div');alert.className='ordre-v210-toast';alert.textContent='● TRANSMISSION REÇUE // CANAL ADMINISTRATION';alert.onclick=ordreV210Inbox;document.body.append(alert);setTimeout(()=>alert.remove(),6200);
+ }
+ ordreV210LastUnreads=current;ordreV210Decorate();
+};
+const ordreV210PriorShell=shell;
+shell=function(...args){ordreV210PriorShell(...args);ordreV210Decorate()};
+const ordreV210Home=home;
+home=function(...args){ordreV210Home(...args);ordreV210Decorate()};
