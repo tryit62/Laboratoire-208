@@ -1592,29 +1592,56 @@ async function ordreV2Poll(){
  const token=await ordreValidToken();if(!token)return;
  const pid=encodeURIComponent(ordreAuth.player_id);
  const [commands, msgs, p, acc]=await Promise.all([
-  ordreNetFetch('/rest/v1/admin_commands?select=id,command_type,payload,status&player_id=eq.'+pid+'&status=eq.PENDING&order=created_at.asc',{token}),
+  ordreNetFetch('/rest/v1/admin_commands?select=id,command_type,payload,status&player_id=eq.'+pid+'&command_type=in.(UNLOCK_STAGE,ASSIGN_MISSION)&status=in.(PENDING,APPLIED)&order=created_at.asc',{token}),
   ordreNetFetch('/rest/v1/player_messages?select=id,subject,body,created_at,read_at&player_id=eq.'+pid+'&order=created_at.desc&limit=100',{token}),
   ordreNetFetch('/rest/v1/players?select=grade,division&id=eq.'+pid,{token}),
   ordreNetFetch('/rest/v1/player_access?select=access_key,revoked_at&player_id=eq.'+pid,{token})]);
  S.reseauMessages=msgs||[];S.reseauGrade=p?.[0]?.grade||null;S.reseauDivision=p?.[0]?.division||null;
  S.reseauAcces=(acc||[]).filter(x=>!x.revoked_at).map(x=>x.access_key);
- const newGrade=S.reseauGrade, newDivision=S.reseauDivision;
+ // Réhydrate les autorisations depuis Supabase, même lorsqu'elles sont déjà APPLIED.
+ // Une confirmation distante n'est pas une preuve que le navigateur a conservé son cache local.
  const seen=ordreV2Seen();
+ let changed=false;
  for(const c of commands||[]){
-  if(!seen[c.id]){
-   if(c.command_type==='ASSIGN_MISSION') S.reseauMission={id:c.payload.value,label:c.payload.label||c.payload.value};
-   if(c.command_type==='UNLOCK_STAGE') {
-    const step=c.payload.value;
-    // Unlocks the targeted evaluation to be started, but never fabricates a completed evaluation.
-    if(/^EVAL[1-5]$/.test(step)){S.reseauDeblocages=Array.isArray(S.reseauDeblocages)?S.reseauDeblocages:[];if(!S.reseauDeblocages.includes(step))S.reseauDeblocages.push(step);S.reseauDeblocage=step;}
-    else if(step==='AFFECTATION')S.reseauDeblocage='AFFECTATION';
-    else if(step==='INITIATION')S.reseauDeblocage='INITIATION';
+  if(!c||!['PENDING','APPLIED'].includes(c.status))continue;
+  const value=typeof c.payload?.value==='string'?c.payload.value:'';
+  let supported=false;
+  if(c.command_type==='UNLOCK_STAGE'){
+   if(/^EVAL[1-5]$/.test(value)){
+    supported=true;
+    S.reseauDeblocages=Array.isArray(S.reseauDeblocages)?S.reseauDeblocages:[];
+    if(!S.reseauDeblocages.includes(value)){
+     S.reseauDeblocages.push(value);
+     changed=true;
+    }
+    if(S.reseauDeblocage!==value){S.reseauDeblocage=value;changed=true}
+   }else if(value==='AFFECTATION'||value==='INITIATION'){
+    supported=true;
+    if(S.reseauDeblocage!==value){S.reseauDeblocage=value;changed=true}
    }
-   seen[c.id]=true;localStorage.setItem(ORDRE_V2_APPLIED+'_'+ordreAuth.matricule,JSON.stringify(seen));save();
+  }else if(c.command_type==='ASSIGN_MISSION'&&/^D[0-9]{3}$/.test(value)){
+   supported=true;
+   const label=typeof c.payload?.label==='string'?c.payload.label.slice(0,180):value;
+   if(S.reseauMission?.id!==value||S.reseauMission?.label!==label){
+    S.reseauMission={id:value,label};changed=true;
+   }
   }
-  // Acknowledge after durable local store; retry on next fetch if network fails.
-  await ordreNetFetch('/rest/v1/rpc/v2_player_ack',{token,method:'POST',body:JSON.stringify({p_command:c.id})});
+  if(!supported)continue;
+  if(!seen[c.id]){seen[c.id]=true;changed=true}
+  // Acknowledge uniquement les commandes encore en attente, après sauvegarde.
+  if(c.status==='PENDING'){
+   profileSave();
+   localStorage.setItem('ordre_terminal',JSON.stringify(S));
+   localStorage.setItem(ORDRE_V2_APPLIED+'_'+ordreAuth.matricule,JSON.stringify(seen));
+   await ordreNetFetch('/rest/v1/rpc/v2_player_ack',{token,method:'POST',body:JSON.stringify({p_command:c.id})});
+  }
  }
+ if(changed){
+  localStorage.setItem(ORDRE_V2_APPLIED+'_'+ordreAuth.matricule,JSON.stringify(seen));
+  profileSave();localStorage.setItem('ordre_terminal',JSON.stringify(S));
+ }
+ // Met à jour le menu d'évaluations si la commande est arrivée pendant son affichage.
+ if(changed&&document.querySelector('.eval-list')&&typeof evals==='function')evals();
 }
 let ordreV2Busy=false;
 async function ordreV2Refresh(){if(ordreV2Busy)return;ordreV2Busy=true;try{await ordreV2Poll()}catch(e){console.warn('Ordres V2:',e.message)}finally{ordreV2Busy=false}}
