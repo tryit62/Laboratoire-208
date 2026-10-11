@@ -1,0 +1,31 @@
+CENTRE DE COMMANDEMENT — TERMINAL V208, BÊTA UNIQUEMENT
+
+IMPORTANT: garder le terminal GitHub V207 inchangé jusqu'au test sur une copie.
+
+Fonctionnement : « LIAISON AU RÉSEAU — BÊTA » sur écran d'identification.
+Le joueur test se connecte à un compte Supabase Auth précréé par l'administrateur.
+Le terminal vérifie via RLS que ce compte possède un matricule attribué.
+Les cinq évaluations, textes, transitions, serment et cinématique restent inchangés.
+Un bilan D000 (étape + décisions) remonte automatiquement après chaque sauvegarde locale.
+Le navigateur conserve sa session locale, y compris un jeton de connexion; utiliser uniquement sur appareil privé pour la bêta.
+
+PRÉPARATION
+1. Créer un utilisateur joueur dédié dans Supabase Authentication > Users, noter son UID.
+2. SQL Editor : INSERT INTO public.players(user_id,matricule) VALUES ('UID-ICI','C-TEST-001');
+   Ne JAMAIS attribuer un matricule existant à un autre UID.
+3. Exécuter le fichier 02_autoriser_progression_beta.sql (une seule fois).
+4. Héberger les 5 fichiers du pack dans une copie GitHub Pages du terminal V207.
+   Conserver tous les médias et le fichier ceremony.html ; ne jamais désinstaller l'application.
+5. Dans la copie, cliquer LIAISON AU RÉSEAU — BÊTA et saisir les identifiants du compte joueur de test.
+6. Tester l'évaluation I et rafraîchir le Centre de Commandement : la progression doit apparaître.
+
+LIMITES
+- Connexion facultative (offline reste possible) ; première liaison exige Internet.
+- Le serveur ne valide pas cryptographiquement la vérité des décisions : état de suivi seulement.
+- Le système de grade, les commandes admin et l'attribution de D001 ne sont PAS implémentés ici.
+- La synchronisation n'enregistre pas de journal d'événements immuable : seulement l'état courant.
+- Les champs de progression existants en ligne peuvent être remplacés par un état local plus ancien
+  en cas d'utilisation sur plusieurs appareils; ne pas distribuer à grande échelle sans gestion de versions.
+- Le stockage local du navigateur et les jetons d'authentification restent sensibles à sa suppression.
+- Un matricule seul continue de permettre l'accès LOCAL au prototype ; ne pas publier à de vrais joueurs
+  avant d'avoir sécurisé l'identité et retiré l'administration prototype.
