@@ -1,5 +1,5 @@
 /* Ordre V207: activation demandée par le joueur, pas de purge du stockage local. */
-const CACHE='ordre-terminal-v210';
+const CACHE='ordre-terminal-v211';
 const PREFIX='ordre-terminal-';
 const CORE=['./index.html','./style.css','./app.js','./manifest.webmanifest','./service-worker.js'];
 const OPTIONAL=['./','./order-logo.png','./apple-touch-icon.png','./icon-192.png','./icon-512.png','./division-1-oeil-fendu.png','./division-2-flamme-inversee.png','./division-3-main-cassee.png','./division-4-spirale-os.png','./division-5-sablier-noir.png','./ceremony.html','./ceremonie.mp3','./oeil.png','./flamme.png','./main.png','./spirale.png','./sablier.png','./ordre.png'];

@@ -248,12 +248,12 @@ function initiateHome(){
  shell(`<section class="init-dashboard">
    <div class="init-id">
     <div><div class="eyebrow">DOSSIER ACTIF</div><h1>${S.matricule||'INITIÉ'}</h1>
-    <div class="init-meta">STATUT // INITIÉ<br>ACCRÉDITATION // OMBRE I<br>DIVISION // ${S.affectation}</div></div>
+    <div class="init-meta">STATUT // INITIÉ<br>ACCRÉDITATION // ${ordreV211Esc(S.reseauGrade||'OMBRE I')}<br>DIVISION // ${ordreV211Esc(S.reseauDivision||S.affectation)}</div></div>
     <img class="init-division-logo" src="${logo}" alt="">
    </div>
-   <div class="mission-status"><span>DOSSIER ACTIF</span><strong>AUCUNE AFFECTATION OPÉRATIONNELLE</strong><small>Votre intégration au réseau est en cours.</small></div>
+   <div class="mission-status"><span>DOSSIER ACTIF</span><strong>${S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION OPÉRATIONNELLE'}</strong><small>${S.reseauMission?'Directive reçue — contenu opérationnel en attente de publication.':'Votre intégration au réseau est en cours.'}</small></div>
    <div class="init-grid">
-    <button onclick="initiateMissions()"><b>MISSIONS</b><span>Aucune affectation</span></button>
+    <button onclick="initiateMissions()"><b>MISSIONS</b><span>${S.reseauMission?ordreV211Esc(S.reseauMission.id):'Aucune affectation'}</span></button>
     <button onclick="initiateMessages()"><b>MESSAGERIE</b><span class="unread">${ordreV210UnreadCount()} NON LU(S)</span></button>
     <button onclick="initiateArchives()"><b>ARCHIVES</b><span>ACCÈS OMBRE I</span></button>
     <button onclick="initiateProfile()"><b>DOSSIER PERSONNEL</b><span>DOSSIER 000 // CLÔTURÉ</span></button>
@@ -263,8 +263,13 @@ function initiateHome(){
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
+ const mission=S.reseauMission;
+ if(mission&&ordreAuth?.matricule===S.matricule){
+  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // OMBRE I');
+  $('#v211MissionCode').textContent=mission.id;$('#v211MissionLabel').textContent=mission.label;return;
+ }
  shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
-}
+} 
 const INITIATE_MESSAGES=[
  {from:'ADMINISTRATION',subject:'CHANGEMENT DE STATUT',date:'AUJOURD’HUI',preview:'Confirmation de votre nouveau niveau d’accès.',body:()=>`Votre dossier candidat a été clôturé.\n\nVotre statut est désormais INITIÉ.\nAccréditation attribuée : OMBRE I.\n\nLes informations accessibles restent soumises au principe de compartimentation. Toute consultation excédant votre niveau d’autorisation doit être interrompue et signalée.`},
  {from:()=>S.affectation,subject:'AFFECTATION DE DIVISION',date:'AUJOURD’HUI',preview:'Communication réservée à votre affectation.',body:()=>divisionMeta(S.affectation).msg},
@@ -450,22 +455,23 @@ function evals(){
       S.eval5&&S.eval5.complete?5:0
     );
     let st=n<=effectiveProgress?'ENREGISTRÉ':n===effectiveProgress+1?'DISPONIBLE':'VERROUILLÉ';
-    let active=((n===1||n===2||n===3||n===4||n===5) && st==='DISPONIBLE') ? ` data-eval="${n}" role="button" tabindex="0"` : '';
+    if(st==='VERROUILLÉ' && S.reseauDeblocages?.includes('EVAL'+n) && ordreAuth?.matricule===S.matricule) st='AUTORISÉ PAR LE CENTRE';
+    let active=((n===1||n===2||n===3||n===4||n===5) && (st==='DISPONIBLE'||st==='AUTORISÉ PAR LE CENTRE')) ? ` data-eval="${n}" role="button" tabindex="0"` : '';
     const symbols=['division-1-oeil-fendu.png','division-2-flamme-inversee.png','division-3-main-cassee.png','division-4-spirale-os.png','division-5-sablier-noir.png'];
     return `<div class="eval ${active?'eval-open':''}"${active}><span class="eval-id"><img class="eval-symbol" src="${symbols[n-1]}" alt="">${['I','II','III','IV','V'][n-1]}</span><span class="eval-state">${st}${active?' &nbsp; ›':''}</span></div>`
   }).join('');
   shell(`<h1 class="title">ÉVALUATIONS</h1><div class="eval-list">${rows}</div><p class="sub evals-progress">PROGRESSION : ${S.progression} / 5</p>${back()}`);
   wireBack();
   const e1=document.querySelector('[data-eval="1"]');
-  if(e1){e1.onclick=eval1Start;e1.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();eval1Start()}}}
+  if(e1){e1.onclick=()=>{if(S.eval1.step>0)eval1Resume();else eval1Start()};e1.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e1.click()}}}
   const e2=document.querySelector('[data-eval="2"]');
-  if(e2){e2.onclick=eval2Start;e2.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();eval2Start()}}}
+  if(e2){e2.onclick=()=>{if(S.eval2.step>0)eval2Resume();else eval2Start()};e2.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e2.click()}}}
   const e3=document.querySelector('[data-eval="3"]');
-  if(e3){e3.onclick=eval3Start;e3.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();eval3Start()}}}
+  if(e3){e3.onclick=()=>{if(S.eval3.step>0)eval3Resume();else eval3Start()};e3.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e3.click()}}}
   const e4=document.querySelector('[data-eval="4"]');
-  if(e4){e4.onclick=eval4Start;e4.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();eval4Start()}}}
+  if(e4){e4.onclick=()=>{if(S.eval4.step>0)eval4Resume();else eval4Start()};e4.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e4.click()}}}
   const e5=document.querySelector('[data-eval="5"]');
-  if(e5){e5.onclick=eval5Start;e5.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();eval5Start()}}}
+  if(e5){e5.onclick=()=>{if(S.eval5.step>0)eval5Resume();else eval5Start()};e5.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e5.click()}}}
 }
 function eval1Shell(body,status='MODULE I // ACTIF'){
   shell(`<div class="module-head"><div><span class="module-code">ÉVALUATION I</span><h1 class="title">MODULE I</h1></div><img class="module-division-symbol" src="division-1-oeil-fendu.png" alt=""></div><div class="rule"></div>${body}<div class="module-help"><button class="btn" id="moduleHelp">[ SOLLICITER LE SUPERVISEUR ]</button></div>`,status);
@@ -1580,7 +1586,7 @@ setTimeout(()=>ordreSyncNow().catch(()=>{}),4000);
    Ne révèle pas les documents ni archives non implémentés ; un ordre d'accès ne change
    pas le contenu de la bibliothèque locale par lui-même. */
 const ORDRE_V2_APPLIED='ordre_v2_applied_commands';
-function ordreV2Seen(){try{return JSON.parse(localStorage.getItem(ORDRE_V2_APPLIED)||'{}')}catch(_){return {}}}
+function ordreV2Seen(){try{return JSON.parse(localStorage.getItem(ORDRE_V2_APPLIED+'_'+(ordreAuth?.matricule||S.matricule))||'{}')}catch(_){return {}}}
 async function ordreV2Poll(){
  if(!ordreAuth?.player_id||ADMIN_MODE||!navigator.onLine||!S.matricule||S.matricule!==ordreAuth.matricule)return;
  const token=await ordreValidToken();if(!token)return;
@@ -1592,6 +1598,7 @@ async function ordreV2Poll(){
   ordreNetFetch('/rest/v1/player_access?select=access_key,revoked_at&player_id=eq.'+pid,{token})]);
  S.reseauMessages=msgs||[];S.reseauGrade=p?.[0]?.grade||null;S.reseauDivision=p?.[0]?.division||null;
  S.reseauAcces=(acc||[]).filter(x=>!x.revoked_at).map(x=>x.access_key);
+ const newGrade=S.reseauGrade, newDivision=S.reseauDivision;
  const seen=ordreV2Seen();
  for(const c of commands||[]){
   if(!seen[c.id]){
@@ -1599,11 +1606,11 @@ async function ordreV2Poll(){
    if(c.command_type==='UNLOCK_STAGE') {
     const step=c.payload.value;
     // Unlocks the targeted evaluation to be started, but never fabricates a completed evaluation.
-    if(/^EVAL[1-5]$/.test(step))S.reseauDeblocage=step;
+    if(/^EVAL[1-5]$/.test(step)){S.reseauDeblocages=Array.isArray(S.reseauDeblocages)?S.reseauDeblocages:[];if(!S.reseauDeblocages.includes(step))S.reseauDeblocages.push(step);S.reseauDeblocage=step;}
     else if(step==='AFFECTATION')S.reseauDeblocage='AFFECTATION';
     else if(step==='INITIATION')S.reseauDeblocage='INITIATION';
    }
-   seen[c.id]=true;localStorage.setItem(ORDRE_V2_APPLIED,JSON.stringify(seen));save();
+   seen[c.id]=true;localStorage.setItem(ORDRE_V2_APPLIED+'_'+ordreAuth.matricule,JSON.stringify(seen));save();
   }
   // Acknowledge after durable local store; retry on next fetch if network fails.
   await ordreNetFetch('/rest/v1/rpc/v2_player_ack',{token,method:'POST',body:JSON.stringify({p_command:c.id})});
@@ -1702,3 +1709,6 @@ const ordreV210PriorShell=shell;
 shell=function(...args){ordreV210PriorShell(...args);ordreV210Decorate()};
 const ordreV210Home=home;
 home=function(...args){ordreV210Home(...args);ordreV210Decorate()};
+
+/* V211 — affichage sécurisé des libellés administratifs reçus. */
+function ordreV211Esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
