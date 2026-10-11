@@ -1,5 +1,5 @@
 /* Ordre V207: activation demandée par le joueur, pas de purge du stockage local. */
-const CACHE='ordre-terminal-v212';
+const CACHE='ordre-terminal-v213';
 const PREFIX='ordre-terminal-';
 const CORE=['./index.html','./style.css','./app.js','./manifest.webmanifest','./service-worker.js'];
 const OPTIONAL=['./','./order-logo.png','./apple-touch-icon.png','./icon-192.png','./icon-512.png','./division-1-oeil-fendu.png','./division-2-flamme-inversee.png','./division-3-main-cassee.png','./division-4-spirale-os.png','./division-5-sablier-noir.png','./ceremony.html','./ceremonie.mp3','./oeil.png','./flamme.png','./main.png','./spirale.png','./sablier.png','./ordre.png'];
@@ -9,7 +9,7 @@ self.addEventListener('install',e=>e.waitUntil((async()=>{
  await Promise.allSettled(OPTIONAL.map(x=>cache.add(x)));
  // One-time migration from V206, whose application has no update notification listener.
  // For V208 and later, remove the next line to require player approval.
- // Attendre confirmation de mise à jour du joueur.
+ // V213: wait for player approval before activating update.
 })()));
 self.addEventListener('message',e=>{if(e.data?.type==='ORDRE_ACTIVATE_UPDATE')self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil((async()=>{

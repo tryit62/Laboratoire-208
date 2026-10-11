@@ -1739,3 +1739,52 @@ home=function(...args){ordreV210Home(...args);ordreV210Decorate()};
 
 /* V211 — affichage sécurisé des libellés administratifs reçus. */
 function ordreV211Esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+
+/* V213 — remote archive catalogue. Metadata only is listed; content is read via authorized RPC. */
+let ordreV213Catalogue=[];
+async function ordreV213Rpc(name,payload){
+ if(!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)throw Error('LIAISON DU MATRICULE REQUISE');
+ const token=await ordreValidToken();if(!token)throw Error('SESSION RÉSEAU EXPIRÉE');
+ return ordreNetFetch('/rest/v1/rpc/'+name,{token,method:'POST',body:JSON.stringify(payload)});
+}
+const ordreV213NativeArchives=initiateArchives;
+initiateArchives=function(){
+ ordreV213NativeArchives();
+ if(!S.serment||!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)return;
+ const pane=document.createElement('section');pane.className='archive-v213';
+ pane.innerHTML='<h2>ARCHIVES // RÉSEAU</h2><p class="tiny">INDEX DOCUMENTAIRE SOUS ACCRÉDITATION. Les documents non publiés restent indisponibles.</p><div id="v213ArchiveItems" class="archive-list">CHARGEMENT...</div><button class="btn" id="v213Refresh">[ ACTUALISER LES ARCHIVES ]</button>';
+ const list=document.querySelector('.archive-list');if(!list)return;
+ list.parentNode.insertBefore(pane,list);
+ pane.querySelector('#v213Refresh').onclick=ordreV213List;
+ ordreV213List();
+};
+async function ordreV213List(){
+ const el=document.getElementById('v213ArchiveItems');if(!el)return;
+ el.textContent='CHARGEMENT DES AUTORISATIONS...';
+ try{
+  const data=await ordreV213Rpc('v213_archive_index',{});
+  ordreV213Catalogue=Array.isArray(data)?data:[];
+  el.replaceChildren();
+  if(!ordreV213Catalogue.length){el.textContent='AUCUNE ARCHIVE SUPPLÉMENTAIRE PUBLIÉE POUR VOTRE ACCRÉDITATION.';return}
+  for(const doc of ordreV213Catalogue){
+   const btn=document.createElement('button');
+   const code=document.createElement('code');code.textContent=doc.doc_id;
+   const title=document.createElement('b');title.textContent=doc.title;
+   const state=document.createElement('span');state.textContent='CONSULTABLE // '+doc.level;
+   btn.append(code,title,state);btn.onclick=()=>ordreV213Read(doc.doc_id);el.append(btn);
+  }
+ }catch(e){el.textContent='ACCÈS AUX ARCHIVES INDISPONIBLE : '+e.message}
+}
+async function ordreV213Read(docId){
+ if(!S.serment)return;
+ shell('<h1 class="title">ARCHIVES // CONSULTATION RÉSEAU</h1><div class="terminal" id="v213Reading">VÉRIFICATION DES AUTORISATIONS...</div><button class="btn" id="v213Back">[ RETOUR AUX ARCHIVES ]</button>','ARCHIVES // LECTURE AUTHENTIFIÉE');
+ document.getElementById('v213Back').onclick=initiateArchives;
+ const out=document.getElementById('v213Reading');
+ try{const d=await ordreV213Rpc('v213_archive_read',{p_doc:docId});
+  if(!d){out.textContent='ACCÈS REFUSÉ OU DOCUMENT RETIRÉ.';return}
+  out.replaceChildren();const h=document.createElement('h2');h.textContent=d.doc_id+' // '+d.title;
+  const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';pre.style.overflowWrap='anywhere';pre.textContent=d.body;
+  out.append(h,pre);
+ }catch(e){out.textContent='LECTURE REFUSÉE : '+e.message}
+}
