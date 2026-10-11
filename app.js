@@ -1574,3 +1574,72 @@ window.addEventListener('online',()=>ordreSyncNow().catch(()=>{}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)ordreSyncNow().catch(()=>{})});
 // If beta account is still linked, refresh its current snapshot after re-opening the app.
 setTimeout(()=>ordreSyncNow().catch(()=>{}),4000);
+
+
+/* V209 BÊTA : réception sécurisée des commandes destinées au compte authentifié.
+   Ne révèle pas les documents ni archives non implémentés ; un ordre d'accès ne change
+   pas le contenu de la bibliothèque locale par lui-même. */
+const ORDRE_V2_APPLIED='ordre_v2_applied_commands';
+function ordreV2Seen(){try{return JSON.parse(localStorage.getItem(ORDRE_V2_APPLIED)||'{}')}catch(_){return {}}}
+async function ordreV2Poll(){
+ if(!ordreAuth?.player_id||ADMIN_MODE||!navigator.onLine||!S.matricule||S.matricule!==ordreAuth.matricule)return;
+ const token=await ordreValidToken();if(!token)return;
+ const pid=encodeURIComponent(ordreAuth.player_id);
+ const [commands, msgs, p, acc]=await Promise.all([
+  ordreNetFetch('/rest/v1/admin_commands?select=id,command_type,payload,status&player_id=eq.'+pid+'&status=eq.PENDING&order=created_at.asc',{token}),
+  ordreNetFetch('/rest/v1/player_messages?select=id,subject,body,created_at,read_at&player_id=eq.'+pid+'&order=created_at.desc&limit=100',{token}),
+  ordreNetFetch('/rest/v1/players?select=grade,division&id=eq.'+pid,{token}),
+  ordreNetFetch('/rest/v1/player_access?select=access_key,revoked_at&player_id=eq.'+pid,{token})]);
+ S.reseauMessages=msgs||[];S.reseauGrade=p?.[0]?.grade||null;S.reseauDivision=p?.[0]?.division||null;
+ S.reseauAcces=(acc||[]).filter(x=>!x.revoked_at).map(x=>x.access_key);
+ const seen=ordreV2Seen();
+ for(const c of commands||[]){
+  if(!seen[c.id]){
+   if(c.command_type==='ASSIGN_MISSION') S.reseauMission={id:c.payload.value,label:c.payload.label||c.payload.value};
+   if(c.command_type==='UNLOCK_STAGE') {
+    const step=c.payload.value;
+    // Unlocks the targeted evaluation to be started, but never fabricates a completed evaluation.
+    if(/^EVAL[1-5]$/.test(step))S.reseauDeblocage=step;
+    else if(step==='AFFECTATION')S.reseauDeblocage='AFFECTATION';
+    else if(step==='INITIATION')S.reseauDeblocage='INITIATION';
+   }
+   seen[c.id]=true;localStorage.setItem(ORDRE_V2_APPLIED,JSON.stringify(seen));save();
+  }
+  // Acknowledge after durable local store; retry on next fetch if network fails.
+  await ordreNetFetch('/rest/v1/rpc/v2_player_ack',{token,method:'POST',body:JSON.stringify({p_command:c.id})});
+ }
+}
+let ordreV2Busy=false;
+async function ordreV2Refresh(){if(ordreV2Busy)return;ordreV2Busy=true;try{await ordreV2Poll()}catch(e){console.warn('Ordres V2:',e.message)}finally{ordreV2Busy=false}}
+setInterval(()=>ordreV2Refresh(),30000);
+window.addEventListener('online',()=>ordreV2Refresh());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)ordreV2Refresh()});
+setTimeout(()=>ordreV2Refresh(),4800);
+function ordreV2Messages(){
+ const msgs=S.reseauMessages||[];
+ shell('<h1 class="title">TRANSMISSIONS DU RÉSEAU</h1><div id="v2Mails"></div><div class="menu"><button class="btn" id="v2Return">[ RETOUR ]</button></div>','MESSAGERIE // RÉSEAU');
+ const list=$('#v2Mails');
+ if(!msgs.length)list.textContent='AUCUNE TRANSMISSION DISTANTE.';
+ for(const m of msgs){const item=document.createElement('button');item.className='btn';item.textContent=(m.read_at?'○ ':'● ')+m.subject;item.onclick=()=>ordreV2ReadMessage(m);list.append(item)}
+ $('#v2Return').onclick=()=>S.serment?initiateHome():home();
+}
+async function ordreV2ReadMessage(m){
+ shell('<h1 class="title" id="v2Subject"></h1><div class="terminal" id="v2Body"></div><div class="menu"><button class="btn" id="v2Back">[ RETOUR AUX TRANSMISSIONS ]</button></div>','MESSAGERIE // TRANSMISSION');
+ $('#v2Subject').textContent=m.subject;$('#v2Body').textContent=m.body;$('#v2Back').onclick=ordreV2Messages;
+ // Read receipt intentionally deferred: V2 does not grant direct update on player_messages.
+}
+function ordreV2Orders(){
+ shell('<h1 class="title">DIRECTIVES DU RÉSEAU</h1><div id="v2Orders"></div><div class="menu"><button class="btn" id="v2Back">[ RETOUR ]</button></div>','RÉSEAU // DIRECTIVES');
+ const out=$('#v2Orders'); const items=[];
+ if(S.reseauMission)items.push('MISSION ATTRIBUÉE : '+S.reseauMission.id+' — '+S.reseauMission.label);
+ if(S.reseauDeblocage)items.push('AUTORISATION DE DÉBLOCAGE : '+S.reseauDeblocage);
+ if(S.reseauGrade)items.push('GRADE ADMINISTRATIF : '+S.reseauGrade);
+ if(S.reseauDivision)items.push('DIVISION ADMINISTRATIVE : '+S.reseauDivision);
+ if(S.reseauAcces?.length)items.push('ACCÈS AUTORISÉS : '+S.reseauAcces.join(', '));
+ out.textContent=items.join('\n\n')||'AUCUNE DIRECTIVE REÇUE.';
+ $('#v2Back').onclick=()=>S.serment?initiateHome():home();
+}
+// Persistent, separate access point; does not rewrite the canonical evaluation/mission story.
+function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Comms">[ TRANSMISSIONS DU RÉSEAU ]</button><button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Comms').onclick=()=>{ordreV2Refresh().then(ordreV2Messages)};el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
+const ordreV2NativeShell=shell;
+shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton()};
