@@ -18,7 +18,7 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER LE TERMINAL ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -88,35 +88,11 @@ IDENTIFICATION REQUISE
   later(()=>identify(),1450);
 }
 function identify(){
-  const last=localStorage.getItem('ordre_terminal_last_profile')||'';
-  shell(`<h1 class="title">IDENTIFICATION</h1>
-  <div class="terminal">SAISISSEZ VOTRE MATRICULE.
-
-UN DOSSIER LOCAL EXISTANT SERA RESTAURÉ AUTOMATIQUEMENT.
-UN MATRICULE INCONNU INITIALISERA UN NOUVEAU DOSSIER CANDIDAT.</div>
-  <div class="id-login">
-    <label>MATRICULE</label>
-    <input id="matricule" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="C-000-000" value="${last}">
-    <button class="btn primary" id="identifyGo">[ S'IDENTIFIER ]</button>
-     <button class="btn" type="button" id="ordreLinkOpen">[ LIAISON AU RÉSEAU — BÊTA ]</button>
-  </div>
-  <div id="identifyFeedback" class="system"></div>`,'IDENTIFICATION // DOSSIER LOCAL');
-  const input=$('#matricule');
-  const go=()=>{
-    const m=String(input.value||'').trim().toUpperCase();
-    if(!m){$('#identifyFeedback').textContent='MATRICULE REQUIS.';return}
-    if(m===ADMIN_MATRICULE){ADMIN_MODE=true;adminPanel();return}
-    const existed=profileSwitch(m);
-    $('#identifyFeedback').textContent=existed?'DOSSIER LOCAL DÉTECTÉ — RESTAURATION...':'NOUVEAU DOSSIER — INITIALISATION...';
-    setTimeout(()=>environment(),900);
-  };
-  $('#identifyGo').onclick=go;
-   $('#ordreLinkOpen').onclick=ordreShowLink;
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')go()});
-  setTimeout(()=>input.focus(),50);
+ // V214 beta : a matricule alone never opens a local profile.
+ ordreShowLink();
 }
 function standalone(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
-function environment(){if(standalone()){S.installed=true;save();shell(`<div class="terminal">POINT D'ACCÈS DÉTECTÉ.\n\nAPPAREIL ENREGISTRÉ.\nCANAL CANDIDAT ÉTABLI.\n\nPROTOCOLE 000 AUTORISÉ.</div>`,'POINT D’ACCÈS ACTIF');later(home,1100)}else{shell(`<h1 class="title">ENVIRONNEMENT NON PERSISTANT</h1><p class="sub">Installation d'un point d'accès local recommandée. Cette opération permet les connexions ultérieures depuis votre appareil.</p><div class="menu"><button class="btn primary" id="install">[ ÉTABLIR LE POINT D'ACCÈS ]</button><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`);$('#install').onclick=installHelp;$('#continue').onclick=home}}
+function environment(){if(!ordreRequireConnection())return;if(standalone()){S.installed=true;save();shell(`<div class="terminal">POINT D'ACCÈS DÉTECTÉ.\n\nAPPAREIL ENREGISTRÉ.\nCANAL CANDIDAT ÉTABLI.\n\nPROTOCOLE 000 AUTORISÉ.</div>`,'POINT D’ACCÈS ACTIF');later(home,1100)}else{shell(`<h1 class="title">ENVIRONNEMENT NON PERSISTANT</h1><p class="sub">Installation d'un point d'accès local recommandée. Cette opération permet les connexions ultérieures depuis votre appareil.</p><div class="menu"><button class="btn primary" id="install">[ ÉTABLIR LE POINT D'ACCÈS ]</button><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`);$('#install').onclick=installHelp;$('#continue').onclick=home}}
 function installHelp(){shell(`<h1 class="title">AUTORISATION SYSTÈME REQUISE</h1><div class="terminal">LE TERMINAL NE DISPOSE PAS DES PRIVILÈGES NÉCESSAIRES POUR MODIFIER VOTRE APPAREIL.\n\nOUVREZ LES OPTIONS DE PARTAGE DE VOTRE NAVIGATEUR.\n\nSÉLECTIONNEZ :\n« SUR L'ÉCRAN D'ACCUEIL »\n\nCONSERVEZ LE NOM : TERMINAL\n\nPUIS OUVREZ LE POINT D'ACCÈS NOUVELLEMENT CRÉÉ.</div><div class="menu"><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`,'AUTORISATION EXTERNE');$('#continue').onclick=home}
 
 function adminPanel(){
@@ -242,7 +218,7 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
    }
  },5000);
 }
-function initiateHome(){
+function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
  shell(`<section class="init-dashboard">
@@ -290,7 +266,7 @@ function openInitiateMessage(i){
 const OMBRE1_ARCHIVES=[["OI-GEN-001", "L’ORDRE DES CINQ OMBRES", "Doctrine institutionnelle, mission et principes."], ["OI-GEN-002", "LES CINQ DIVISIONS", "Rôles, philosophies et compartimentation."], ["OI-GEN-003", "NIVEAUX D’ACCRÉDITATION", "Structure officielle des accès OMBRE I à III."], ["OI-NEB-001", "NEBULINE — NOTICE INTRODUCTIVE", "Doctrine opérationnelle sur la Nebuline."], ["OI-VOI-001", "LES CINQ VOILES", "Noms, fonctions et signes accessibles à OMBRE I."], ["OI-FRA-001", "FRACTURES — CLASSIFICATION GÉNÉRALE", "Définition, origine et conduite initiale."], ["OI-ART-001", "ARTEFACTS ET ANCRAGES", "Objets persistants et moyens de stabilisation."], ["OI-MAN-001", "LES MANIFESTÉS", "Définition et protocole concernant les sujets altérés."], ["OI-PRO-004", "PROTOCOLE FACE À UNE ANOMALIE", "Procédure générale de terrain."], ["OI-PRO-007", "COLLECTE ET CONSERVATION DES PREUVES", "Méthode de documentation en contexte instable."], ["OI-HIS-001", "CHRONOLOGIE INSTITUTIONNELLE", "Édition historique abrégée OMBRE I."], ["OI-GEO-001", "RÉSEAU DE L’ORDRE", "Bastions et organisation géographique."], ["OI-GEO-002", "ZONES SOUS SURVEILLANCE", "Ancrages et zones géographiques indexées."], ["OI-INC-014", "INCIDENT LANTERNUM — 1864", "Incident historique ; reproduction interdite."], ["OI-RAP-001", "RAPPORT D’INTERVENTION — 24-071", "Exemple d’intervention OMBRE I clôturée."]];
 const OMBRE1_BODIES=["CLASSIFICATION : OMBRE I\nCATÉGORIE : FONDAMENTAUX / DOCTRINE\n\nL’Ordre des Cinq Ombres est une organisation transséculaire chargée d’identifier, étudier, contenir et, lorsque nécessaire, corriger les phénomènes susceptibles de compromettre la continuité de la réalité humaine observable.\n\nMISSION\n— Identifier les anomalies et Fractures.\n— Étudier les Artefacts, Ancrages et individus affectés.\n— Préserver les traces nécessaires à l’analyse.\n— Limiter l’exposition publique.\n— Corriger les conséquences lorsqu’une intervention est autorisée.\n— Maintenir la continuité dans la limite des moyens disponibles.\n\nL’Ordre ne garantit pas la préservation de toute information.\nIl garantit la continuité dans la limite de ses moyens.\n\nPRINCIPES\nI — « La réalité n’est qu’une version. »\nLa perception humaine ne constitue pas une description exhaustive du réel.\n\nII — « L’Histoire est une barrière. »\nLa continuité historique participe à la stabilité de l’expérience humaine.\n\nIII — « L’unité mène à la dissolution. »\nToute convergence supprimant les séparations nécessaires à la continuité doit être considérée comme un risque.\n\nOBLIGATION DE L’INITIÉ\nN’expliquez jamais au-delà de ce que les preuves permettent d’établir.\n\nSi une observation et la doctrine disponible sont incompatibles :\nCONSIGNEZ L’INCOMPATIBILITÉ.\nNE LA RÉSOLVEZ PAS PAR SUPPOSITION.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : FONDAMENTAUX / ORGANISATION\n\nŒIL FENDU — OBSERVER\nSurveillance, analyse, anticipation, information sans intervention prématurée.\n« Voir n’autorise pas à agir. »\n\nFLAMME INVERSÉE — ADAPTER\nIntervention, modification, infiltration et correction.\n« Préserver n’implique pas toujours de laisser intact. »\n\nMAIN CASSÉE — ANTICIPER\nConséquences, relations causales, évaluation et stabilisation structurelle.\n« Toute correction crée une conséquence. »\n\nSPIRALE D’OS — PRÉSERVER\nArchives, traces, continuité historique et reconstruction.\n« Ce qui disparaît peut continuer d’avoir eu lieu. »\n\nSABLIER NOIR — CONTENIR\nConfinement, sécurité interne, information restreinte et contrôle prolongé.\n« Toute information n’a pas vocation à circuler. »\n\n[ANNEXE SN-00 : ACCÈS REFUSÉ]\n\nCOOPÉRATION\nAucune Division n’est autonome lors d’une Fracture majeure.\nUn désaccord entre Divisions ne constitue pas nécessairement une défaillance.\n\nPlusieurs réponses incompatibles peuvent être simultanément justifiées.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : FONDAMENTAUX / SÉCURITÉ\n\nOMBRE I — PERSONNEL INITIÉ\nDoctrine générale, protocoles communs, classifications élémentaires et archives nécessaires aux opérations autorisées.\n\nOMBRE II — ACCÈS RENFORCÉ\nMécanismes, opérations sensibles, histoire restreinte et protocoles avancés.\nL’accès n’est pas accordé par ancienneté seule.\n\nOMBRE III — DIRECTION\nPlus haut niveau reconnu par les protocoles institutionnels.\nLes informations OMBRE III ne doivent pas être recherchées, reconstruites ou déduites par du personnel inférieur.\n\nCOMPARTIMENTATION\nUne accréditation identique ne garantit pas un accès identique.\nLes droits peuvent dépendre de la Division, de l’opération, de la fonction, du site et du besoin d’en connaître.\n\nUn refus d’accès ne constitue pas la preuve qu’un niveau supérieur existe pour la référence consultée.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PHÉNOMÈNES / NEBULINE\n\nNebuline est la désignation employée pour un état fondamental de la réalité associé aux phénomènes observés lorsque sa stabilité ordinaire est compromise.\n\nSa nature exacte n’est pas accessible au niveau OMBRE I.\n\nNE PAS INTERPRÉTER LA NEBULINE COMME :\n— une énergie ;\n— une matière ;\n— un espace ou une dimension ;\n— une substance ;\n— une entité consciente.\n\nToute représentation n’est qu’un modèle de travail.\n\nLa Nebuline n’est pas directement observée dans les conditions ordinaires. Sa présence est inférée à partir de divergences documentables : perception, mémoire, causalité, histoire, cohérence d’un lieu, d’un objet ou d’un individu.\n\nMANIFESTATIONS INDIRECTES POSSIBLES\nInformations sans source identifiable, souvenirs incompatibles, événements sans cause observable, objets à l’historique impossible, divergences temporelles, altérations perceptives partagées, répétitions, absences et contradictions entre témoignage, mémoire et preuve.\n\nCes phénomènes sont des conséquences observées. Ils ne sont pas la Nebuline elle-même.\n\nPRINCIPE FONDAMENTAL\nAucune intention de la Nebuline n’est démontrée au niveau OMBRE I.\nUne séquence intelligible ne constitue pas une preuve de communication.\n\n« Une coïncidence signifiante n’est pas une intention démontrée. »\n\nCAS N-17-██\nTrois agents demeurent cinq minutes dans une même pièce.\nA rapporte quatre minutes.\nB en rapporte dix-sept.\nC affirme n’être jamais entré malgré l’enregistrement vidéo, mais décrit correctement un objet absent de tous les enregistrements.\nL’objet n’a jamais été retrouvé.\n\nCONCLUSION : instabilité Nebulinique confirmée. Cause non établie.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PHÉNOMÈNES / VOILES\n\nL’Ordre reconnaît cinq mécanismes fondamentaux associés au maintien d’une expérience humaine cohérente de la réalité.\n\nIls ne doivent pas être interprétés comme des lieux, dimensions, frontières physiques ou réalités parallèles.\n\nI — CONSCIENCE\nCohérence de la perception individuelle.\n« Voir quelque chose ne prouve pas son existence. Ne pas le voir ne prouve pas son absence. »\n\nII — MÉMOIRE\nContinuité des souvenirs.\n« Un souvenir est un élément d’enquête. Il n’est pas une preuve. »\n\nIII — CAUSALITÉ\nCohérence entre causes et conséquences.\n« L’absence de cause observable n’autorise pas l’invention d’une cause. »\n\nIV — HISTOIRE\nContinuité entre événements, traces et versions documentées.\n« L’Histoire n’est pas déterminée par ce dont nous nous souvenons. »\n\nV — OMBRES\nFonction : [ACCÈS OMBRE II]\nTout comportement non attribuable aux quatre premiers Voiles, persistant après stabilisation ou récurrent dans des contextes indépendants doit être signalé.\nNe procédez pas vous-même à une classification OMBRES.\n\nINTERACTIONS\nPlusieurs Voiles peuvent être concernés simultanément.\n\nLa relation fondamentale entre Nebuline et Voiles n’est pas accessible au niveau OMBRE I.\n\nFORMULATIONS NON AUTORISÉES SANS PREUVE :\n« le Voile s’est ouvert » ;\n« quelque chose vit derrière le Voile » ;\n« la Nebuline cherche à entrer ».\n\nNOTE\nLes évaluations du Recrutement exposent volontairement les Candidats à des modèles contrôlés de divergence.\n[MÉTHODES : COMPARTIMENTÉES]", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PHÉNOMÈNES / FRACTURES\n\nUne Fracture est une instabilité persistante ou évolutive affectant la cohérence d’un ou plusieurs Voiles.\n\nUne Fracture n’est pas nécessairement une fissure physique.\nElle peut concerner un lieu, un objet, un événement, une période, un groupe ou un individu.\n\n« Une Fracture est définie par ce qu’elle rend instable. »\n\nANOMALIE ≠ FRACTURE\nUn événement isolé ne suffit pas.\nLa persistance, l’évolution, la propagation ou les conséquences durables participent à la classification.\n\nORIGINE OPÉRATIONNELLE\nSPONTANÉE — aucune intervention identifiable.\nCONSÉCUTIVE — apparition après un événement identifiable.\nINDUITE — une action consciente a participé à son apparition.\n[PROCÉDURES D’INDUCTION : ACCÈS REFUSÉ]\n\nÉVOLUTION POSSIBLE\nRésolution, persistance, propagation, déplacement, changement de manifestation ou implication de plusieurs Voiles.\n\nUne stabilisation ne signifie pas nécessairement disparition.\n\nÉVALUATION INITIALE\n1. Qu’est-ce qui est observé ?\n2. Qu’est-ce qui diverge ?\n3. Qui ou quoi est affecté ?\n4. Quels Voiles sont suspectés ?\n5. Le phénomène évolue-t-il ?\n6. Persiste-t-il ?\n7. Que faut-il préserver ?\n\nCAS F-28\nUne chambre disparaît d’un logement. Une famille se souvient d’un fils dont les documents cessent progressivement d’exister. Après stabilisation, l’inventaire d’intervention mentionne quatre agents ; le registre de mission n’en reconnaît que trois. L’identité du quatrième demeure non établie.\n\nL’absence d’explication n’autorise jamais l’invention d’une intention.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PHÉNOMÈNES / OBJETS\n\nARTEFACT\nObjet conservant durablement des propriétés anormales documentées associées à une Fracture ou à une exposition Nebulinique.\n\nUn Artefact n’est pas nécessairement ancien. Il peut être manufacturé récemment.\n\n« Un Artefact n’est pas défini par ce qu’il est. Il est défini par ce qu’il continue de faire. »\n\nSes propriétés doivent rester cohérentes avec l’instabilité observée. Un même Artefact peut impliquer plusieurs Voiles.\n\nMANIPULATION\nDocumenter position, état initial, photographies, inventaire et personnes exposées.\nLimiter les interactions.\nNe pas tenter de reproduire une propriété sans autorisation.\n\nNE PAS DÉTRUIRE PAR DÉFAUT\nLa destruction peut supprimer une preuve, modifier une Fracture, retirer un stabilisateur inconnu ou provoquer une manifestation secondaire.\n\n« Un objet anormal n’est pas nécessairement la cause de l’anomalie. »\n\nANCRAGE\nMoyen matériel ou structurel reconnu ou employé par l’Ordre pour contribuer à la stabilisation d’une situation.\nUn Ancrage peut être installé, découvert ou préexistant.\n\nARTEFACT ≠ ANCRAGE\nLe premier conserve une propriété anormale.\nLe second contribue à la stabilité.\nUn même objet peut exceptionnellement relever des deux catégories.\n\nCAS A-19\nUne cassette récupérée en 1991 contient une phrase décrivant le déplacement futur d’une chaise. Lorsque la chaise est déplacée en 1993, quatre secondes supplémentaires deviennent audibles. Elles disparaissent lors du retrait de la chaise et reviennent lorsqu’elle est replacée.\nClassification : Causalité.\nConclusion : relation anormale confirmée ; direction causale inconnue.\n\nUn dispositif construit par l’Ordre pour mesurer ou interagir avec une instabilité n’est pas nécessairement un Artefact.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PHÉNOMÈNES / SUJETS BIOLOGIQUES\n\nUn Manifesté est un être vivant présentant une altération durable documentée à la suite d’une exposition à une Fracture.\n\nUn Manifesté demeure un individu.\n\nLa classification ne présume ni hostilité, ni perte de conscience, ni altération morale, ni dangerosité.\n\n« Un Manifesté doit être considéré comme un sujet avant d’être considéré comme un phénomène. »\n\nMANIFESTATION ≠ POSSESSION\nLes termes « possédé », « habité », « contrôlé par la Nebuline » ou « remplacé » ne constituent pas des classifications reconnues.\n\nSTABILITÉ\nCertains Manifestés demeurent parfaitement stables pendant de longues périodes.\nLa classification Manifesté ne justifie pas à elle seule un confinement.\n\nLes altérations peuvent concerner perception, mémoire, identité, relation au temps, lieux, objets, présence physique ou conservation des traces.\n[TYPOLOGIE COMPLÈTE : OMBRE II]\n\nPREMIER CONTACT\nÉtablir le danger immédiat.\nNe pas présumer l’hostilité.\nDocumenter séparément comportement et phénomène.\nÉviter toute exposition supplémentaire.\nNe jamais provoquer volontairement une Manifestation.\n\nLe confinement exige un risque documenté.\n\nCAS M-104\nSujet féminin, 34 ans lors de la première observation. Après une Fracture de Mémoire, elle peut restituer à la première personne les souvenirs détaillés qui lui sont racontés, tout en distinguant parfaitement ses propres souvenirs des souvenirs reçus.\n\n« Je sais lesquels sont à moi. Je ne sais simplement pas pourquoi j’ai les autres. »\n\nAucune agressivité. Aucune perte d’identité.\nDÉCISION — 1982 : ████████████████████\nNOTE — 1991 : DOSSIER ROUVERT.\nMOTIF : ████████████████", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PROCÉDURES / TERRAIN\n\nOBJECTIF\nÉtablir ce qui s’est produit, ce qui peut être prouvé, ce qui demeure incohérent et ce qui risque de changer.\n\n« L’explication vient après l’observation. »\n\nI — NE TOUCHEZ À RIEN\nEn l’absence de danger immédiat : ne déplacez pas, ne corrigez pas, ne reproduisez pas, ne détruisez pas.\n\nII — ÉTABLISSEZ L’OBSERVABLE\nDécrivez des faits, pas une explication.\n\nIII — SÉPAREZ LES SOURCES\nOBSERVATION — constat direct.\nTÉMOIGNAGE — déclaration d’un tiers.\nMÉMOIRE — souvenir d’un individu.\nPREUVE — élément examinable indépendamment.\nINTERPRÉTATION — conclusion.\n\nIV — IDENTIFIEZ LA DIVERGENCE\n« Qu’est-ce qui devrait être vrai ici, mais ne l’est pas ? »\n\nV — TESTEZ SANS PROVOQUER\nComparer, mesurer passivement, confronter des sources indépendantes et consulter les Archives.\n« Vérifier n’est pas provoquer. »\n\nVI — ÉVALUEZ LES VOILES\nConscience / Mémoire / Causalité / Histoire.\nOmbres : signalement uniquement.\n\nVII — RECHERCHEZ LA PERSISTANCE\nFracture active ? Artefact potentiel ? Manifesté potentiel ? Anomalie résiduelle ?\n\nVIII — PRÉSERVEZ\nPersonnes, preuves, traces et Ancrages.\n\nIX — TRANSMETTEZ\nFAITS CONFIRMÉS / NON CONFIRMÉS / DIVERGENCES / VOILES SUSPECTÉS / RISQUES / ÉLÉMENTS PERSISTANTS / ACTION RECOMMANDÉE.\n\n« JE NE SAIS PAS » est une conclusion acceptable.\n\nPROTOCOLE D’INCOHÉRENCE\nSi les preuves sont incompatibles avec la doctrine connue :\nINCOHÉRENCE DOCTRINALE\nConsignez-la. Ne modifiez pas les preuves pour restaurer la doctrine.\n\n« La doctrine organise les observations. Elle ne remplace pas les observations. »\n\nSIGNALEMENT PRIORITAIRE\nDanger vital, évolution rapide, disparition d’un agent, modification inexpliquée d’un Ancrage, atteinte multi-Voiles, suspicion Ombres ou phénomène semblant réagir spécifiquement à l’observateur.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : PROCÉDURES / INVESTIGATION\n\nDans une situation instable, la preuve elle-même peut devenir instable.\n\nRÈGLE DES TROIS TRACES\nTout élément critique doit, lorsque possible, être documenté sous au moins trois formes indépendantes.\n\nOn ne multiplie pas les preuves parce qu’elles sont fiables.\nOn les multiplie parce qu’elles peuvent cesser d’être d’accord.\n\nAucune hiérarchie absolue n’existe entre photographie, document, témoignage ou mémoire.\n\nHORODATAGE\nConsigner découverte, enregistrement, collecteur, position, état initial et modifications.\nNe jamais corriger une divergence d’horodatage sans préserver les valeurs originales.\n\nDOCUMENTS\nNe jamais annoter l’original.\nIdentifier toute COPIE, TRANSCRIPTION ou RECONSTITUTION.\n\nIMAGE / VIDÉO\nSi l’enregistrement diverge de l’observation :\nDIVERGENCE OBSERVATION / ENREGISTREMENT\n\nAUDIO\nDécrire une voix non identifiée avant d’interpréter son origine.\n\nMÉMOIRE\nRecueillir le témoignage avant confrontation avec les autres sources lorsque possible.\nUne mémoire divergente peut être la dernière trace d’un état antérieur.\n\nINVENTAIRE\nChaque pièce reçoit une référence unique.\nExemple : D001-P01 / D001-A01 / D001-T01.\n\nPREUVE DISPARUE\nNe jamais supprimer sa référence.\nÉLÉMENT ABSENT\nou\nORIGINE DE RÉFÉRENCE NON ÉTABLIE\n\nCHAÎNE DE CONSERVATION\nToute transmission doit être enregistrée.\nUne rupture de chaîne peut elle-même constituer une donnée opérationnelle.\n\nRÈGLE FINALE\n« Ne cherchez pas la preuve qui confirme votre hypothèse.\nCherchez la preuve qui devrait exister si votre hypothèse était fausse. »", "CLASSIFICATION : OMBRE I\nCATÉGORIE : HISTOIRE / RÉFÉRENCE\nÉDITION : ABRÉGÉE\n\nCette chronologie n’est pas l’intégralité des archives.\nCertaines dates sont approximatives, certaines entrées abrégées ou retirées.\n\n~1280 — Premières « Taches Noires ». Environ 1 280 occurrences historiques classifiées rétrospectivement.\n\nDÉBUT XIVe — Émergence de l’Ordre. La date exacte de constitution demeure discutée dans les archives accessibles.\n[DOSSIER DE FONDATION : OMBRE III]\n\n1347 — Grande Peste. Corrélations locales avec des phénomènes aujourd’hui associés aux Fractures. Causalité générale non établie.\n\n1350 — Premiers dossiers biologiques correspondant aux futures classifications de Manifestés.\n\n1478 — GRANDE PURGE. Destruction et réorganisation documentaire majeure.\nMOTIF OFFICIEL : PRÉSERVATION DE LA CONTINUITÉ.\n\n1520 — Formalisation des cinq Divisions.\n\n1633 — INCIDENT CALDERÓN. Une expérimentation dirigée par Ruiz Calderón entraîne trente morts. Certaines utilisations actives de phénomènes Nebuliniques sont ensuite interdites.\n\n1740 — Révision des protocoles relatifs aux Manifestés. Certains sont employés en surveillance et reconnaissance. Ces pratiques ne correspondent plus aux protocoles contemporains.\n\n1791 — Fragment : « Cinq Ombres… mais une seulement restera. »\nOrigine contestée. Interprétation officielle : aucune.\n\n1864 — INCIDENT LANTERNUM. 8 Initiés engagés, 0 récupéré, divergence de 7 minutes.\n\n1915 — Augmentation d’instabilités dans plusieurs zones de conflit.\n\n1947 — PACTE DU SILENCE. Protocoles internationaux de limitation de l’exposition publique.\n\n1972 — DÉFECTIONS. Plusieurs membres quittent simultanément l’Ordre et emportent des archives.\n\n1991 — Augmentation durable d’incidents relevant de classifications Ombres.\n[DÉTAILS : ACCÈS REFUSÉ]\n\n2003 — INCIDENT DES ARCHIVES FRAGMENTÉES. Une partie des archives internes est soustraite au contrôle de l’Ordre. Récupération incomplète.\n\nDEPUIS 2021 — SATURATION NEBULAIRE. Hausse durable du nombre, de la fréquence et de la complexité de certaines anomalies. Cause non établie.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : GÉOGRAPHIE / ORGANISATION\n\nL’Ordre opère au moyen d’un réseau décentralisé de cellules, sites d’observation, dépôts documentaires et Bastions.\n\nUn Bastion est une implantation majeure disposant de capacités permanentes de coordination et d’intervention.\n\nBASTIONS INDEXÉS OMBRE I\n— FLORENCE\n— PRAGUE\n— ISTANBUL\n— KYOTO\n— MONTRÉAL\n— DAKAR\n\nLes coordonnées précises, effectifs, capacités et responsabilités spécifiques sont compartimentés.\n\nL’appartenance à une Division ne correspond pas à un Bastion.\nLes cinq Divisions peuvent opérer à travers plusieurs implantations.\n\nUne mission peut être administrativement rattachée à un Bastion différent de la localisation physique de l’Initié.\n\n[MODULE CARTOGRAPHIQUE : EN PRÉPARATION]", "CLASSIFICATION : OMBRE I\nCATÉGORIE : GÉOGRAPHIE / PHÉNOMÈNES\n\nUne zone surveillée ne constitue pas nécessairement une Fracture active.\n\nANCRAGES SURVEILLÉS\nNAPLES — activité historique complexe. [OMB I : DONNÉES PARTIELLES]\nHAÏTI — phénomènes documentaires, mémoriels et historiques récurrents.\nTCHERNOBYL — surveillance renforcée. Toute corrélation historique/Nebuline demeure non établie sans dossier autorisé.\nBRUNIQUEL — relevés historiques et anomalies de continuité.\n\nANCRAGES À FORTE STABILITÉ\nROME\nJÉRUSALEM\nSHANGHAI\nNEW YORK\n\nLa cause de cette stabilité n’est pas accessible au niveau OMBRE I.\n\nCOULOIRS NEBULINIQUES\nCertaines archives décrivent des phénomènes de continuité entre zones géographiquement éloignées.\n\nZones indexées :\nSAHARA\nAMAZONIE\nTSINGY DE L’ANKARANA\n\n[DÉFINITION : OMBRE II]\n[CARTOGRAPHIE : DONNÉES PARTIELLES]\n\n17 RÉFÉRENCES CARTOGRAPHIQUES SONT ACTUELLEMENT AUTORISÉES AU NIVEAU OMBRE I.", "CLASSIFICATION : OMBRE I\nCATÉGORIE : INCIDENTS / HISTORIQUE\nSTATUT : CLOS — REPRODUCTION INTERDITE\n\nLANTERNUM désigne un dispositif expérimental employé par l’Ordre en 1864 dans le cadre de l’observation contrôlée d’un phénomène Nebulinique.\n\nPERSONNEL ENGAGÉ : 8 INITIÉS\nPERSONNEL RÉCUPÉRÉ : 0\nDIVERGENCE DOCUMENTÉE : 00:07:00\nSTATUT DU SITE : ACCÈS INTERDIT\n\nCHRONOLOGIE PARTIELLE\n21:03:14 — Activation.\n21:04:02 — Huit Initiés en position.\n21:04:19 — Première divergence instrumentale.\n21:04:31 — Perte simultanée de plusieurs mesures.\n21:04:██ — ████████████████████\n21:11:██ — Reprise des systèmes.\n\nAucune source exploitable ne permet d’établir ce qui s’est produit pendant l’intervalle.\nAucune sortie n’est enregistrée.\n\nRECHERCHE\n0 corps.\n0 survivant.\n0 sortie documentée.\n\nClassification officielle : DISPARITION EN CONTEXTE DE FRACTURE.\nDécès non confirmé.\n\nLE DISPOSITIF\nConstruit intentionnellement, destiné à interagir avec des conditions Nebuliniques, utilisé dans un environnement contrôlé et non classifié comme Artefact lors de son inventaire initial.\n\n[ARCHITECTURE : OMBRE III]\n[PRINCIPES DE FONCTIONNEMENT : OMBRE III]\n[OBJECTIF COMPLET : OMBRE III]\n\nANNEXES RÉPERTORIÉES : 11\nACCESSIBLES OMBRE I : 0\n\nToute pièce, transcription, composant ou référence Lanternum absente de l’index actuel doit être signalée immédiatement.\n\nCAUSE : NON ACCESSIBLE\nDESTINATION DES INITIÉS : INCONNUE\nNATURE DES SEPT MINUTES : NON ÉTABLIE\nREPRODUCTION : FORMELLEMENT INTERDITE", "CLASSIFICATION : OMBRE I\nCATÉGORIE : RAPPORTS / INTERVENTION\nSTATUT : CLOS\nDATE : 18.04.2024\nSITE : ████████ / FRANCE\nÉQUIPE : 3 AGENTS\n\nSIGNALEMENT\nTrois lettres sont adressées à l’ancienne occupante d’une maison, décédée en 2018. Les cachets postaux datent de 2024. Aucun expéditeur.\n\nLETTRE 01 : « La fuite commence dans la cuisine. »\nUne fuite survient deux jours plus tard.\n\nLETTRE 02 : « Ne laissez pas la fenêtre ouverte jeudi. »\nUne tempête endommage la fenêtre le jeudi suivant.\n\nLETTRE 03 : « Il faudra déplacer l’armoire. »\nAucun événement correspondant.\n\nCOLLECTE\nChaque lettre est conservée, photographiée et transcrite indépendamment.\n\nDIVERGENCE\nÀ 17:21, Lettre 03 :\n« Merci d’avoir déplacé l’armoire. »\nLes photographies et transcriptions conservent la formulation initiale.\nL’armoire n’a pas été déplacée.\n\nCAUSALITÉ SUSPECTÉE.\n\nUne inspection non invasive révèle une cavité derrière l’armoire, absente des plans.\nLe propriétaire affirme avoir toujours signalé qu’il ne fallait jamais déplacer l’armoire. Les enregistrements contredisent cette affirmation.\n\nRECLASSIFICATION : CAUSALITÉ / MÉMOIRE SUSPECTÉE.\n\nDÉCISION\nL’armoire n’est pas déplacée.\nSurveillance passive.\nAucune tentative de provoquer une quatrième lettre.\n\nJ+14 : Lettre 03 retrouve sa formulation originale.\nJ+30 : aucune nouvelle lettre.\n\nSTATUT : STABILISÉ / SURVEILLANCE.\n\nINVENTAIRE FINAL\nP01 à P10 — pièces transférées : 10.\n\nCONTRÔLE DE DÉPÔT\nPIÈCES RÉCEPTIONNÉES : 11.\n\nP11 — ENVELOPPE 04\nÉTAT : FERMÉE\nDESTINATAIRE : ████████████████\nCACHET : 18.04.2027\n\nOUVERTURE : NON AUTORISÉE\nDOSSIER : CLOS"];
 
-function initiateArchives(){
+function initiateArchives(){if(!ordreRequireConnection())return;
  shell(`<h1 class="title">ARCHIVES</h1><div class="archive-head">ACCRÉDITATION ACTIVE // OMBRE I<br>${OMBRE1_ARCHIVES.length} DOCUMENTS CONSULTABLES // RÉFÉRENCES SUPÉRIEURES COMPARTIMENTÉES</div><div class="carto-launch"><button class="btn carto-main-btn" onclick="openCartography()">[ OUVRIR CARTOGRAPHIE OPÉRATIONNELLE ]</button><small>17 RÉFÉRENCES CARTOGRAPHIQUES AUTORISÉES // OMBRE I</small></div><div class="archive-personal"><button class="btn" onclick="replayInitiationCeremony()">[ ARCHIVE PERSONNELLE // REVOIR LA CÉRÉMONIE D’INITIATION ]</button><small>D000 — LE RECRUTEMENT // SOUVENIR DE CARRIÈRE // AUCUNE MODIFICATION DE PROGRESSION</small></div><div class="archive-list">${OMBRE1_ARCHIVES.map((a,i)=>`<button onclick="openArchive(${i})"><code>${a[0]}</code><b>${a[1]}</b><span>CONSULTABLE</span></button>`).join('')}<div class="locked-archive"><code>OII-MAN-001</code><b>TYPOLOGIE DES MANIFESTÉS</b><span>ACCÈS OMBRE II REQUIS</span></div><div class="locked-archive"><code>OII-███-███</code><b>RÉFÉRENCE RESTREINTE</b><span>ACCÈS OMBRE II REQUIS</span></div><div class="locked-archive"><code>OIII-HIS-00</code><b>INCIDENT FONDATEUR</b><span>ACCÈS OMBRE III REQUIS</span></div><div class="locked-archive"><code>█████████</code><b>████████████████</b><span>ACCÈS REFUSÉ</span></div></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'ARCHIVES // OMBRE I');
 }
 function openArchive(i){
@@ -396,7 +372,7 @@ function initiateProfile(){
  <div class="profile-restricted"><b>MOTIF D'AFFECTATION</b><span>[ACCÈS OMBRE II REQUIS]</span></div>
  <button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'DOSSIER PERSONNEL // INITIÉ');
 }
-function home(){
+function home(){if(!ordreRequireConnection())return;
   if(S.serment||S.statut==='INITIÉ'){ if(!S.initieAccueilVu){initiateFirstEntry();return} initiateHome();return }
 
   const now=new Date();
@@ -1490,7 +1466,7 @@ async function ordreInitUpdates(){
     setInterval(()=>{if(!document.hidden)ordreCheckUpdate()},60*60*1000);
   }catch(e){console.warn('Service de mise à jour indisponible',e)}
 }
-ordreInitUpdates();boot();
+ordreInitUpdates();
 
 window.addEventListener("load",()=>{
  let r=null;try{r=sessionStorage.getItem("OCI_CEREMONY_RESULT")}catch(e){}
@@ -1508,7 +1484,43 @@ const ORDRE_SUPABASE_URL='https://onpghpkjivetztfgaoev.supabase.co';
 const ORDRE_SUPABASE_KEY='sb_publishable_NV_yQhC6CJoq4I5SweOuZg_okjeJy4l';
 const ORDRE_LINK_STORE='ordre_network_beta_v1';
 let ordreAuth=null,ordreSyncTimer=null,ordreSyncBusy=false;
-try{ordreAuth=JSON.parse(localStorage.getItem(ORDRE_LINK_STORE)||'null')}catch(e){}
+// V214 : no persisted authenticated session between app openings.
+try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
+let ordreLockActive=true;
+let ordreLockTimer=null;
+let ordreLastActivity=Date.now();
+const ORDRE_IDLE_MS=10*60*1000;
+function ordreClearAuth(){
+ ordreAuth=null;
+ try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
+ if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
+}
+async function ordreLock(){
+ const old=ordreAuth;
+ ordreLockActive=true;
+ ordreClearAuth();
+ if(ordreLockTimer){clearInterval(ordreLockTimer);ordreLockTimer=null;}
+ document.body.classList.remove('initiated','cinematic-mode','div-eye','div-flame','div-hand','div-spiral','div-hourglass');
+ ordreShowLink();
+ // Best effort server-side logout. Browser storage is cleared regardless.
+ if(old?.access_token){try{await ordreNetFetch('/auth/v1/logout',{method:'POST',token:old.access_token,body:'{}'})}catch(e){}}
+}
+function ordreScheduleLock(){
+ ordreLockActive=false;
+ ordreLastActivity=Date.now();
+ if(ordreLockTimer)clearInterval(ordreLockTimer);
+ ordreLockTimer=setInterval(()=>{if(!ordreLockActive && Date.now()-ordreLastActivity>=ORDRE_IDLE_MS)ordreLock()},15000);
+}
+['pointerdown','keydown','touchstart'].forEach(name=>document.addEventListener(name,()=>{
+ if(!ordreLockActive)ordreLastActivity=Date.now();
+},{passive:true}));
+// When opening the application again, no authenticated session survives.
+window.addEventListener('pagehide',()=>{ordreClearAuth();ordreLockActive=true});
+function ordreRequireConnection(){
+ if(ordreLockActive||!ordreAuth?.access_token){ordreShowLink();return false;}
+ return true;
+}
+
 function ordreNetHeaders(token){return {'apikey':ORDRE_SUPABASE_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json'}}
 async function ordreNetFetch(path,opts={}){
  const r=await fetch(ORDRE_SUPABASE_URL+path,{...opts,headers:{...ordreNetHeaders(opts.token||ORDRE_SUPABASE_KEY),...(opts.headers||{})}});
@@ -1517,39 +1529,113 @@ async function ordreNetFetch(path,opts={}){
  return v;
 }
 async function ordreValidToken(){
- if(!ordreAuth?.access_token)return null;
+ if(ordreLockActive||!ordreAuth?.access_token)return null;
  if(Date.now()<((ordreAuth.expires_at||0)-90)*1000)return ordreAuth.access_token;
  if(!ordreAuth.refresh_token)return null;
  const x=await ordreNetFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:ordreAuth.refresh_token})});
  ordreAuth={...ordreAuth,...x,expires_at:Math.floor(Date.now()/1000)+(x.expires_in||3600)};
  localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));return ordreAuth.access_token;
 }
+/* V214 BETA — Enrôlement via serveur. Codes jamais enregistrés dans les fichiers du terminal. */
 function ordreShowLink(){
- shell(`<h1 class="title">LIAISON AU RÉSEAU // BÊTA</h1>
- <p class="sub">Cette fonction relie votre carrière locale à un compte de test délivré par l'Ordre. Votre matricule reste inchangé.</p>
+ ordreLockActive=true;
+ shell(`<h1 class="title">LIAISON AU RÉSEAU // V214 BÊTA</h1>
+ <p class="sub">Un candidat reçoit un matricule et un code d'activation individuel dans sa boîte D000.</p>
+ <div class="menu"><button class="btn primary" id="v214Activate">[ PREMIÈRE ACTIVATION ]</button>
+ <button class="btn" id="v214Login">[ CONNEXION PERSONNELLE ]</button>
+ <button class="btn" id="v214Legacy">[ ANCIEN COMPTE BÊTA — TEST UNIQUEMENT ]</button>
+ <button class="btn" id="v214Back">[ ACCUEIL SÉCURISÉ ]</button></div>
+ <p class="tiny">PROTOCOLE BÊTA : accès réservé aux matricules de test.</p>`,'RÉSEAU // IDENTIFICATION');
+ $('#v214Activate').onclick=ordreV214Activate;
+ $('#v214Login').onclick=ordreV214Login;
+ $('#v214Legacy').onclick=ordreLegacyLink;
+ $('#v214Back').onclick=ordreShowLink;
+}
+function ordreV214Email(m){return 'agent-'+m.toLowerCase()+'@example.com'}
+async function ordreV214CompleteLink(x){
+ const token=x.access_token;
+ const rows=await ordreNetFetch('/rest/v1/players?select=id,matricule,user_id&user_id=eq.'+encodeURIComponent(x.user.id),{token});
+ if(!Array.isArray(rows)||rows.length!==1)throw Error('AUCUN DOSSIER JOUEUR AUTORISÉ POUR CETTE SESSION.');
+ const linked=rows[0];
+ if(S.matricule&&S.matricule!==linked.matricule&&!profileLoad(linked.matricule)){
+  throw Error('UN AUTRE MATRICULE LOCAL EST CHARGÉ. VÉRIFIEZ AVANT DE POURSUIVRE.');
+ }
+ ordreAuth={access_token:token,refresh_token:x.refresh_token,expires_at:Math.floor(Date.now()/1000)+x.expires_in,user_id:x.user.id,player_id:linked.id,matricule:linked.matricule};
+ localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
+ profileSwitch(linked.matricule);ordreScheduleLock();await ordreSyncNow();
+}
+function ordreV214Activate(){
+ shell(`<h1 class="title">ACTIVATION DU DOSSIER // V214</h1>
+ <p class="sub">Saisissez les identifiants de votre carte candidat, puis choisissez une phrase secrète personnelle d’au moins 14 caractères. Elle vous servira lors de vos prochaines connexions.</p>
+ <label class="tiny" for="v214Mat">MATRICULE</label><input class="input" id="v214Mat" autocomplete="off" autocapitalize="characters" placeholder="C-BETA-002">
+ <label class="tiny" for="v214Code">CODE D'ACTIVATION (32 CARACTÈRES)</label><input class="input" id="v214Code" autocapitalize="characters" autocomplete="off" spellcheck="false" style="text-transform:none">
+ <label class="tiny" for="v214Personal">CHOISIR MON CODE PERSONNEL (14 CARACTÈRES MINIMUM)</label><input class="input" id="v214Personal" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" style="text-transform:none">
+ <label class="tiny" for="v214PersonalRepeat">CONFIRMER MON CODE PERSONNEL</label><input class="input" id="v214PersonalRepeat" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" style="text-transform:none">
+ <div class="menu"><button class="btn" id="v214ShowSecret">[ AFFICHER / MASQUER LES CODES ]</button>
+ <button class="btn primary" id="v214Confirm">[ ACTIVER MON DOSSIER ]</button>
+ <button class="btn" id="v214Return">[ RETOUR ]</button></div>
+ <div class="system" id="v214Status" role="status"></div>`,'ACTIVATION // BÊTA');
+ $('#v214ShowSecret').onclick=()=>{const visible=$('#v214Personal').type==='password';$('#v214Personal').type=visible?'text':'password';$('#v214PersonalRepeat').type=visible?'text':'password'};
+ $('#v214Return').onclick=ordreShowLink;
+ $('#v214Confirm').onclick=async()=>{
+  const btn=$('#v214Confirm'),status=$('#v214Status');
+  const matricule=$('#v214Mat').value.trim().toUpperCase();
+  const activation_code=$('#v214Code').value.replace(/[\s-]/g,'').toUpperCase();
+  const personal_code=$('#v214Personal').value;
+  const confirmation=$('#v214PersonalRepeat').value;
+  if(!/^C-[A-Z0-9-]{4,32}$/.test(matricule)||!/^[0-9A-F]{32}$/.test(activation_code)){status.textContent='MATRICULE OU CODE D’ACTIVATION INVALIDE.';return}
+  if(personal_code.length<14||personal_code.length>128){status.textContent='LE CODE PERSONNEL DOIT CONTENIR ENTRE 14 ET 128 CARACTÈRES.';return}
+  if(personal_code!==confirmation){status.textContent='LES DEUX CODES PERSONNELS NE CORRESPONDENT PAS.';return}
+  if(!confirm('Avez-vous mémorisé votre CODE PERSONNEL ? Sans procédure de récupération active, un oubli peut bloquer votre accès.'))return;
+  btn.disabled=true;status.textContent='VÉRIFICATION DU DOSSIER...';
+  try{
+   const r=await ordreNetFetch('/functions/v1/ordre-enrolement',{method:'POST',body:JSON.stringify({action:'activate',matricule,activation_code,personal_code})});
+   if(!r.activated)throw Error('ACTIVATION NON CONFIRMÉE');
+   status.textContent='DOSSIER ACTIVÉ. ÉTABLISSEMENT DE LA SESSION...';
+   const x=await ordreNetFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:ordreV214Email(matricule),password:personal_code})});
+   await ordreV214CompleteLink(x);
+   status.textContent='LIAISON ÉTABLIE.';setTimeout(()=>environment(),1000);
+  }catch(e){status.textContent='ACTIVATION / CONNEXION NON FINALISÉE : '+e.message+' SI LE CODE A ÉTÉ UTILISÉ, ESSAYEZ « CONNEXION PERSONNELLE ».';btn.disabled=false}
+ };
+}
+function ordreV214Login(){
+ shell(`<h1 class="title">CONNEXION PERSONNELLE // V214</h1>
+ <p class="sub">Retrouvez votre dossier avec le matricule et le code personnel conservé lors de la première activation.</p>
+ <label class="tiny" for="v214LoginMat">MATRICULE</label><input class="input" id="v214LoginMat" autocapitalize="characters" autocomplete="username" placeholder="C-BETA-002">
+ <label class="tiny" for="v214LoginCode">CODE PERSONNEL</label><input class="input" id="v214LoginCode" type="password" autocomplete="current-password" style="text-transform:none">
+ <div class="menu"><button class="btn primary" id="v214LoginGo">[ ÉTABLIR LA LIAISON ]</button><button class="btn" id="v214LoginBack">[ RETOUR ]</button></div>
+ <div class="system" id="v214LoginStatus" role="status"></div>`,'CONNEXION // BÊTA');
+ $('#v214LoginBack').onclick=ordreShowLink;
+ $('#v214LoginGo').onclick=async()=>{
+  const btn=$('#v214LoginGo'),status=$('#v214LoginStatus');
+  const matricule=$('#v214LoginMat').value.trim().toUpperCase(),personal_code=$('#v214LoginCode').value;
+  if(!/^C-[A-Z0-9-]{4,32}$/.test(matricule)||!personal_code){status.textContent='MATRICULE ET CODE REQUIS.';return}
+  btn.disabled=true;status.textContent='CONTRÔLE DES IDENTIFIANTS...';
+  try{
+   const x=await ordreNetFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:ordreV214Email(matricule),password:personal_code})});
+   await ordreV214CompleteLink(x);
+   status.textContent='LIAISON ÉTABLIE.';setTimeout(()=>environment(),1000);
+  }catch(e){status.textContent='CONNEXION REFUSÉE : '+e.message;btn.disabled=false}
+ };
+}
+function ordreLegacyLink(){
+ shell(`<h1 class="title">ANCIEN COMPTE DE TEST // V208</h1>
+ <p class="sub">Accès conservé pour les profils bêta liés à une adresse e-mail.</p>
  <label class="tiny" for="ordreMail">ADRESSE E-MAIL DU COMPTE DE TEST</label>
  <input class="input" id="ordreMail" type="email" autocomplete="username" autocapitalize="off" style="text-transform:none">
  <label class="tiny" for="ordrePass">MOT DE PASSE DU COMPTE DE TEST</label>
  <input class="input" id="ordrePass" type="password" autocomplete="current-password" style="text-transform:none">
  <div class="menu"><button class="btn primary" id="ordreLinkConfirm">[ ACTIVER LA LIAISON ]</button><button class="btn" id="ordreLinkBack">[ RETOUR ]</button></div>
- <div class="system" id="ordreLinkStatus" role="status"></div>`,'RÉSEAU // LIAISON DE TEST');
- $('#ordreLinkBack').onclick=identify;
+ <div class="system" id="ordreLinkStatus" role="status"></div>`,'RÉSEAU // ANCIENNE LIAISON');
+ $('#ordreLinkBack').onclick=ordreShowLink;
  $('#ordreLinkConfirm').onclick=async()=>{
   const status=$('#ordreLinkStatus'),button=$('#ordreLinkConfirm');button.disabled=true;status.textContent='VÉRIFICATION DES AUTORISATIONS...';
   try{
    const mail=$('#ordreMail').value.trim(),password=$('#ordrePass').value;
    if(!mail||!password)throw Error('ADRESSE E-MAIL ET MOT DE PASSE REQUIS.');
    const x=await ordreNetFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:mail,password})});
-   const token=x.access_token;
-   const rows=await ordreNetFetch('/rest/v1/players?select=id,matricule,user_id&user_id=eq.'+encodeURIComponent(x.user.id),{token});
-   if(!Array.isArray(rows)||rows.length!==1)throw Error('AUCUN MATRICULE AUTORISÉ POUR CE COMPTE. CONTACTEZ LE SUPERVISEUR.');
-   const linked=rows[0],local=profileLoad(linked.matricule);
-   if(!local&&S.matricule&&S.matricule!==linked.matricule)throw Error('MATRICULE LOCAL DIFFÉRENT : LIAISON ANNULÉE.');
-   ordreAuth={access_token:token,refresh_token:x.refresh_token,expires_at:Math.floor(Date.now()/1000)+x.expires_in,user_id:x.user.id,player_id:linked.id,matricule:linked.matricule};
-   localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
-   profileSwitch(linked.matricule);await ordreSyncNow();
-   status.textContent='LIAISON ACTIVÉE. SYNCHRONISATION EFFECTUÉE.';
-   setTimeout(()=>environment(),1100);
+   await ordreV214CompleteLink(x);
+   status.textContent='LIAISON ACTIVÉE. SYNCHRONISATION EFFECTUÉE.';setTimeout(()=>environment(),1100);
   }catch(e){status.textContent='LIAISON REFUSÉE : '+e.message;button.disabled=false}
  };
 }
@@ -1559,7 +1645,7 @@ function ordreQueueSync(){
  ordreSyncTimer=setTimeout(()=>ordreSyncNow().catch(e=>console.warn('Synchro différée:',e.message)),1500);
 }
 async function ordreSyncNow(){
- if(ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
+ if(ordreLockActive||ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
  ordreSyncBusy=true;
  try{
   const token=await ordreValidToken();if(!token)return;
@@ -1744,7 +1830,7 @@ function ordreV211Esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;
 /* V213 — remote archive catalogue. Metadata only is listed; content is read via authorized RPC. */
 let ordreV213Catalogue=[];
 async function ordreV213Rpc(name,payload){
- if(!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)throw Error('LIAISON DU MATRICULE REQUISE');
+ if(ordreLockActive||!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)throw Error('LIAISON DU MATRICULE REQUISE');
  const token=await ordreValidToken();if(!token)throw Error('SESSION RÉSEAU EXPIRÉE');
  return ordreNetFetch('/rest/v1/rpc/'+name,{token,method:'POST',body:JSON.stringify(payload)});
 }
@@ -1788,3 +1874,6 @@ async function ordreV213Read(docId){
   out.append(h,pre);
  }catch(e){out.textContent='LECTURE REFUSÉE : '+e.message}
 }
+
+// V214: start only after authentication and locking routines are initialized.
+boot();
