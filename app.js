@@ -18,7 +18,7 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER LE TERMINAL ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER LE TERMINAL ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -1484,6 +1484,7 @@ const ORDRE_SUPABASE_URL='https://onpghpkjivetztfgaoev.supabase.co';
 const ORDRE_SUPABASE_KEY='sb_publishable_NV_yQhC6CJoq4I5SweOuZg_okjeJy4l';
 const ORDRE_LINK_STORE='ordre_network_beta_v1';
 let ordreAuth=null,ordreSyncTimer=null,ordreSyncBusy=false;
+let ordreSyncReady=false,ordreServerVersion=null;
 // V214 : no persisted authenticated session between app openings.
 try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
 let ordreLockActive=true;
@@ -1491,6 +1492,7 @@ let ordreLockTimer=null;
 let ordreLastActivity=Date.now();
 const ORDRE_IDLE_MS=10*60*1000;
 function ordreClearAuth(){
+ ordreSyncReady=false;ordreServerVersion=null;
  ordreAuth=null;
  try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
  if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
@@ -1562,7 +1564,10 @@ async function ordreV214CompleteLink(x){
  }
  ordreAuth={access_token:token,refresh_token:x.refresh_token,expires_at:Math.floor(Date.now()/1000)+x.expires_in,user_id:x.user.id,player_id:linked.id,matricule:linked.matricule};
  localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
- profileSwitch(linked.matricule);ordreScheduleLock();await ordreSyncNow();
+ profileSwitch(linked.matricule);ordreScheduleLock();
+ try{await ordreRestoreProgress(token)}catch(e){ordreSyncReady=false;throw e}
+ ordreSyncReady=true;
+ if(!ordreServerVersion)await ordreSyncNow();
 }
 function ordreV214Activate(){
  shell(`<h1 class="title">ACTIVATION DU DOSSIER // V214</h1>
@@ -1639,32 +1644,107 @@ function ordreLegacyLink(){
   }catch(e){status.textContent='LIAISON REFUSÉE : '+e.message;button.disabled=false}
  };
 }
+/* V215 BETA : sauvegarde complète et restauration du dossier D000.
+   Les données restent déclaratives : elles ne remplacent pas les décisions administratives. */
+const ORDRE_PROGRESS_FIELDS=Object.keys(defaults).filter(k=>k!=='matricule'&&k!=='installed');
+function ordreProgressSnapshot(){
+ const out={};
+ for(const key of ORDRE_PROGRESS_FIELDS)out[key]=JSON.parse(JSON.stringify(S[key]===undefined?defaults[key]:S[key]));
+ return out;
+}
+function ordreProgressKey(m){return 'ordre_d000_modified_'+String(m||'').trim().toUpperCase()}
+function ordreMarkLocalChange(){
+ if(ADMIN_MODE||!S.matricule)return;
+ if(ordreSyncReady)ordreLegacySummaryOnly=false;
+ try{localStorage.setItem(ordreProgressKey(S.matricule),new Date().toISOString())}catch(e){}
+}
+function ordreLocalChangedAt(m){
+ const t=Date.parse(localStorage.getItem(ordreProgressKey(m))||'');
+ return Number.isFinite(t)?t:0;
+}
+function ordreApplyRemoteProfile(profile,matricule){
+ if(!profile||typeof profile!=='object'||Array.isArray(profile))throw Error('SAUVEGARDE DISTANTE INVALIDE.');
+ const fresh=profileCreate(matricule);
+ for(const key of ORDRE_PROGRESS_FIELDS){
+  if(Object.prototype.hasOwnProperty.call(profile,key))fresh[key]=profile[key];
+ }
+ for(let i=1;i<=5;i++){
+  const k='eval'+i;
+  if(!fresh[k]||typeof fresh[k]!=='object'||Array.isArray(fresh[k]))throw Error('ÉVALUATION DISTANTE INVALIDE.');
+  fresh[k]={...defaults[k],...fresh[k]};
+ }
+ fresh.tendances={...defaults.tendances,...(fresh.tendances||{})};
+ S=fresh;ACTIVE_PROFILE=matricule;
+ localStorage.setItem('ordre_terminal',JSON.stringify(S));
+ profileSave();
+}
+async function ordreGetServerProgress(token){
+ const path='/rest/v1/dossier_progress?select=state,updated_at&player_id=eq.'+encodeURIComponent(ordreAuth.player_id)+'&dossier_id=eq.D000';
+ const rows=await ordreNetFetch(path,{token});
+ if(!Array.isArray(rows)||rows.length>1)throw Error('DOSSIER DISTANT AMBIGU.');
+ return rows[0]||null;
+}
+async function ordreRestoreProgress(token){
+ if(!navigator.onLine)throw Error('RÉSEAU REQUIS POUR RESTAURER LE DOSSIER.');
+ const row=await ordreGetServerProgress(token);
+ ordreServerVersion=row?.updated_at||null;
+ if(!row)return;
+ const remote=row.state?.profile;
+ if(!remote){
+  // Ancien format : seul un résumé existe. Ne jamais remplacer un profil local détaillé.
+  // Ne pas écrire par-dessus ce résumé tant que le joueur n'a rien changé.
+  ordreLegacySummaryOnly=!profileLoad(ordreAuth.matricule);
+  return;
+ }
+ ordreLegacySummaryOnly=false;
+ const serverTime=Date.parse(row.updated_at||'')||0;
+ const localTime=ordreLocalChangedAt(ordreAuth.matricule);
+ // Une progression hors ligne plus récente est conservée et sera envoyée.
+ if(localTime>serverTime+1000)return;
+ ordreApplyRemoteProfile(remote,ordreAuth.matricule);
+ try{localStorage.setItem(ordreProgressKey(ordreAuth.matricule),row.updated_at||new Date().toISOString())}catch(e){}
+}
+let ordreLegacySummaryOnly=false;
 function ordreQueueSync(){
- if(!ordreAuth?.matricule||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule)return;
+ if(!ordreSyncReady||!ordreAuth?.matricule||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule)return;
  if(ordreSyncTimer)clearTimeout(ordreSyncTimer);
  ordreSyncTimer=setTimeout(()=>ordreSyncNow().catch(e=>console.warn('Synchro différée:',e.message)),1500);
 }
 async function ordreSyncNow(){
- if(ordreLockActive||ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
+ if(!ordreSyncReady||ordreLockActive||ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
  ordreSyncBusy=true;
  try{
   const token=await ordreValidToken();if(!token)return;
-  // Strictly limit the submitted telemetry fields: don't overwrite admin grade, access or assignments.
+  const current=await ordreGetServerProgress(token);
+  if(ordreLegacySummaryOnly&&current?.state&&!current.state.profile)return;
+  // Ne jamais écraser une sauvegarde modifiée ailleurs après notre dernière lecture.
+  if(current?.updated_at&&ordreServerVersion&&current.updated_at!==ordreServerVersion){
+   console.warn('Dossier modifié sur un autre appareil : synchronisation interrompue.');
+   return;
+  }
+  if(current?.updated_at&&!ordreServerVersion){
+   console.warn('Sauvegarde distante inconnue : synchronisation interrompue.');
+   return;
+  }
   const evals=[S.eval1,S.eval2,S.eval3,S.eval4,S.eval5];
   const finished=evals.reduce((n,e)=>n+(e?.complete?1:0),0);
   const i=evals.findIndex(e=>!e?.complete);
   const stage=i===-1?(S.serment?'INITIATION_TERMINEE':'AFFECTATION_ET_SERMENT'):'EVALUATION_'+(i+1)+'_ETAPE_'+(evals[i]?.step||0);
-  const state={evaluations:evals.map((e,j)=>({number:j+1,step:e?.step||0,complete:!!e?.complete})),progression:S.progression||0,serment:!!S.serment,
+  const state={schema_version:2,profile:ordreProgressSnapshot(),
+   evaluations:evals.map((e,j)=>({number:j+1,step:e?.step||0,complete:!!e?.complete})),
+   progression:S.progression||0,serment:!!S.serment,
    statutLocal:S.statut||'CANDIDAT',affectationLocale:S.affectationDone?S.affectation:null,
    decisions:{eval1:S.eval1?.decision??null,eval2:S.eval2?.decision??null,eval3:S.eval3?.decision??null,eval4:S.eval4?.decision??null,eval5:S.eval5?.decision??null},
    synced_at:new Date().toISOString()};
   const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':finished===0?'NON_COMMENCE':'EN_COURS',state}];
   await ordreNetFetch('/rest/v1/dossier_progress?on_conflict=player_id,dossier_id',{method:'POST',token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
+  // Actualiser la version connue pour détecter les autres sessions.
+  const updated=await ordreGetServerProgress(token);
+  ordreServerVersion=updated?.updated_at||null;
  }finally{ordreSyncBusy=false}
 }
 window.addEventListener('online',()=>ordreSyncNow().catch(()=>{}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)ordreSyncNow().catch(()=>{})});
-// If beta account is still linked, refresh its current snapshot after re-opening the app.
 setTimeout(()=>ordreSyncNow().catch(()=>{}),4000);
 
 
