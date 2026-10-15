@@ -1,3 +1,4 @@
+/* ORDRE TERMINAL V217 — correctif mise à jour du cache et restauration V216 */
 const $=s=>document.querySelector(s); const app=$('#app');
 const defaults={matricule:'',statut:'CANDIDAT',accreditation:'0',affectation:'—',inventaire:null,progression:0,messages:1,installed:false,
 eval1:{step:0,factAttempts:0,epistemic:null,controlAttempts:0,decision:null,versions:null,memoryCount:null,cardAnswers:[],sourceObservation:null,complete:false},

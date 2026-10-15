@@ -1,5 +1,5 @@
 /* Ordre V207: activation demandée par le joueur, pas de purge du stockage local. */
-const CACHE='ordre-terminal-v213';
+const CACHE='ordre-terminal-v217';
 const PREFIX='ordre-terminal-';
 const CORE=['./index.html','./style.css','./app.js','./manifest.webmanifest','./service-worker.js'];
 const OPTIONAL=['./','./order-logo.png','./apple-touch-icon.png','./icon-192.png','./icon-512.png','./division-1-oeil-fendu.png','./division-2-flamme-inversee.png','./division-3-main-cassee.png','./division-4-spirale-os.png','./division-5-sablier-noir.png','./ceremony.html','./ceremonie.mp3','./oeil.png','./flamme.png','./main.png','./spirale.png','./sablier.png','./ordre.png'];
@@ -9,7 +9,7 @@ self.addEventListener('install',e=>e.waitUntil((async()=>{
  await Promise.allSettled(OPTIONAL.map(x=>cache.add(x)));
  // One-time migration from V206, whose application has no update notification listener.
  // For V208 and later, remove the next line to require player approval.
- // V213: wait for player approval before activating update.
+ await self.skipWaiting();
 })()));
 self.addEventListener('message',e=>{if(e.data?.type==='ORDRE_ACTIVATE_UPDATE')self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil((async()=>{
@@ -25,9 +25,9 @@ self.addEventListener('fetch',e=>{
   // Online first for HTML navigation, offline fallback to cached index.
   e.respondWith(fetch(req).catch(async()=>await caches.match('./index.html')||Response.error()));return;
  }
- // Immutable versioned JS/CSS use their installed cache snapshot while online fetch remains fallback.
+ // V217: always fetch fresh JS/CSS while online; cached files only when offline.
  if(url.pathname.endsWith('/app.js')||url.pathname.endsWith('/style.css')){
-  e.respondWith(caches.match(url.origin+url.pathname).then(r=>r||fetch(req)));return;
+  e.respondWith(fetch(req).then(async r=>{if(r.ok){const c=await caches.open(CACHE);await c.put(req,r.clone())}return r}).catch(async()=>await caches.match(req)||await caches.match(url.origin+url.pathname)||Response.error()));return;
  }
  e.respondWith(caches.match(req).then(r=>r||fetch(req)));
 });
