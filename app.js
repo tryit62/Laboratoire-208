@@ -1485,6 +1485,7 @@ const ORDRE_SUPABASE_KEY='sb_publishable_NV_yQhC6CJoq4I5SweOuZg_okjeJy4l';
 const ORDRE_LINK_STORE='ordre_network_beta_v1';
 let ordreAuth=null,ordreSyncTimer=null,ordreSyncBusy=false;
 let ordreSyncReady=false,ordreServerVersion=null;
+let ordrePendingChanges=false;
 // V214 : no persisted authenticated session between app openings.
 try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
 let ordreLockActive=true;
@@ -1492,7 +1493,7 @@ let ordreLockTimer=null;
 let ordreLastActivity=Date.now();
 const ORDRE_IDLE_MS=10*60*1000;
 function ordreClearAuth(){
- ordreSyncReady=false;ordreServerVersion=null;
+ ordreSyncReady=false;ordreServerVersion=null;ordrePendingChanges=false;
  ordreAuth=null;
  try{localStorage.removeItem(ORDRE_LINK_STORE)}catch(e){}
  if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
@@ -1567,7 +1568,8 @@ async function ordreV214CompleteLink(x){
  profileSwitch(linked.matricule);ordreScheduleLock();
  try{await ordreRestoreProgress(token)}catch(e){ordreSyncReady=false;throw e}
  ordreSyncReady=true;
- if(!ordreServerVersion)await ordreSyncNow();
+ // Ne pas écrire automatiquement au simple fait de se connecter.
+ // Une nouvelle sauvegarde partira uniquement après une action du joueur. 
 }
 function ordreV214Activate(){
  shell(`<h1 class="title">ACTIVATION DU DOSSIER // V214</h1>
@@ -1655,7 +1657,7 @@ function ordreProgressSnapshot(){
 function ordreProgressKey(m){return 'ordre_d000_modified_'+String(m||'').trim().toUpperCase()}
 function ordreMarkLocalChange(){
  if(ADMIN_MODE||!S.matricule)return;
- if(ordreSyncReady)ordreLegacySummaryOnly=false;
+ if(ordreSyncReady){ordreLegacySummaryOnly=false;ordrePendingChanges=true;}
  try{localStorage.setItem(ordreProgressKey(S.matricule),new Date().toISOString())}catch(e){}
 }
 function ordreLocalChangedAt(m){
@@ -1697,10 +1699,9 @@ async function ordreRestoreProgress(token){
   return;
  }
  ordreLegacySummaryOnly=false;
- const serverTime=Date.parse(row.updated_at||'')||0;
- const localTime=ordreLocalChangedAt(ordreAuth.matricule);
- // Une progression hors ligne plus récente est conservée et sera envoyée.
- if(localTime>serverTime+1000)return;
+ // V216 : le serveur fait autorité à chaque nouvelle authentification.
+ // Les horodatages locaux ne permettent pas de prouver qu'un profil est plus avancé.
+ // Ne jamais réinjecter un ancien profil local par-dessus une sauvegarde serveur.
  ordreApplyRemoteProfile(remote,ordreAuth.matricule);
  try{localStorage.setItem(ordreProgressKey(ordreAuth.matricule),row.updated_at||new Date().toISOString())}catch(e){}
 }
@@ -1711,7 +1712,7 @@ function ordreQueueSync(){
  ordreSyncTimer=setTimeout(()=>ordreSyncNow().catch(e=>console.warn('Synchro différée:',e.message)),1500);
 }
 async function ordreSyncNow(){
- if(!ordreSyncReady||ordreLockActive||ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
+ if(!ordreSyncReady||!ordrePendingChanges||ordreLockActive||ordreSyncBusy||!ordreAuth?.player_id||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule||!navigator.onLine)return;
  ordreSyncBusy=true;
  try{
   const token=await ordreValidToken();if(!token)return;
@@ -1720,6 +1721,8 @@ async function ordreSyncNow(){
   // Ne jamais écraser une sauvegarde modifiée ailleurs après notre dernière lecture.
   if(current?.updated_at&&ordreServerVersion&&current.updated_at!==ordreServerVersion){
    console.warn('Dossier modifié sur un autre appareil : synchronisation interrompue.');
+   ordreSyncReady=false;
+   alert('UNE SAUVEGARDE PLUS RÉCENTE EXISTE SUR LE RÉSEAU. VERROUILLEZ LE TERMINAL PUIS RECONNECTEZ-VOUS POUR LA RÉCUPÉRER. AUCUNE DONNÉE DISTANTE N’A ÉTÉ REMPLACÉE.');
    return;
   }
   if(current?.updated_at&&!ordreServerVersion){
@@ -1741,6 +1744,7 @@ async function ordreSyncNow(){
   // Actualiser la version connue pour détecter les autres sessions.
   const updated=await ordreGetServerProgress(token);
   ordreServerVersion=updated?.updated_at||null;
+  ordrePendingChanges=false;
  }finally{ordreSyncBusy=false}
 }
 window.addEventListener('online',()=>ordreSyncNow().catch(()=>{}));
