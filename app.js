@@ -1,4 +1,4 @@
-/* ORDRE TERMINAL V217 — correctif mise à jour du cache et restauration V216 */
+/* ORDRE TERMINAL V218 — restauration stricte et synchronisation anti-regression */
 const $=s=>document.querySelector(s); const app=$('#app');
 const defaults={matricule:'',statut:'CANDIDAT',accreditation:'0',affectation:'—',inventaire:null,progression:0,messages:1,installed:false,
 eval1:{step:0,factAttempts:0,epistemic:null,controlAttempts:0,decision:null,versions:null,memoryCount:null,cardAnswers:[],sourceObservation:null,complete:false},
@@ -1566,9 +1566,9 @@ async function ordreV214CompleteLink(x){
  }
  ordreAuth={access_token:token,refresh_token:x.refresh_token,expires_at:Math.floor(Date.now()/1000)+x.expires_in,user_id:x.user.id,player_id:linked.id,matricule:linked.matricule};
  localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
- profileSwitch(linked.matricule);ordreScheduleLock();
- try{await ordreRestoreProgress(token)}catch(e){ordreSyncReady=false;throw e}
- ordreSyncReady=true;
+ profileSwitch(linked.matricule);
+ try{await ordreRestoreProgress(token)}catch(e){ordreClearAuth();ordreLockActive=true;throw e}
+ ordrePendingChanges=false;ordreSyncReady=true;ordreScheduleLock();
  // Ne pas écrire automatiquement au simple fait de se connecter.
  // Une nouvelle sauvegarde partira uniquement après une action du joueur. 
 }
@@ -1667,6 +1667,7 @@ function ordreLocalChangedAt(m){
 }
 function ordreApplyRemoteProfile(profile,matricule){
  if(!profile||typeof profile!=='object'||Array.isArray(profile))throw Error('SAUVEGARDE DISTANTE INVALIDE.');
+ if(Object.keys(profile).length && ![1,2,3,4,5].every(i=>profile['eval'+i]&&typeof profile['eval'+i]==='object'))throw Error('SAUVEGARDE DISTANTE INCOMPLÈTE.');
  const fresh=profileCreate(matricule);
  for(const key of ORDRE_PROGRESS_FIELDS){
   if(Object.prototype.hasOwnProperty.call(profile,key))fresh[key]=profile[key];
@@ -1691,14 +1692,13 @@ async function ordreRestoreProgress(token){
  if(!navigator.onLine)throw Error('RÉSEAU REQUIS POUR RESTAURER LE DOSSIER.');
  const row=await ordreGetServerProgress(token);
  ordreServerVersion=row?.updated_at||null;
- if(!row)return;
- const remote=row.state?.profile;
- if(!remote){
-  // Ancien format : seul un résumé existe. Ne jamais remplacer un profil local détaillé.
-  // Ne pas écrire par-dessus ce résumé tant que le joueur n'a rien changé.
-  ordreLegacySummaryOnly=!profileLoad(ordreAuth.matricule);
+ if(!row){
+  // Nouveau dossier uniquement : ne jamais reprendre silencieusement une sauvegarde locale ancienne.
+  ordreApplyRemoteProfile({},ordreAuth.matricule);
   return;
  }
+ const remote=row.state?.profile;
+ if(!remote)throw Error('DOSSIER RÉSEAU INCOMPLET : RESTAURATION BLOQUÉE. CONTACTEZ L’ADMINISTRATION.');
  ordreLegacySummaryOnly=false;
  // V216 : le serveur fait autorité à chaque nouvelle authentification.
  // Les horodatages locaux ne permettent pas de prouver qu'un profil est plus avancé.
@@ -1707,6 +1707,22 @@ async function ordreRestoreProgress(token){
  try{localStorage.setItem(ordreProgressKey(ordreAuth.matricule),row.updated_at||new Date().toISOString())}catch(e){}
 }
 let ordreLegacySummaryOnly=false;
+// Une progression déjà acquise ne peut jamais être rétrogradée par une ancienne session.
+function ordreIsRegression(local,remote){
+ if(!remote||typeof remote!=='object')return false;
+ for(let i=1;i<=5;i++){
+  const a=local['eval'+i]||{},b=remote['eval'+i]||{};
+  if(b.complete&&!a.complete)return true;
+  if((Number(b.step)||0)>(Number(a.step)||0))return true;
+ }
+ if((Number(remote.progression)||0)>(Number(local.progression)||0))return true;
+ if(remote.serment&&!local.serment)return true;
+ return false;
+}
+function ordreStopUnsafeSync(message){
+ ordreSyncReady=false;ordrePendingChanges=false;
+ alert(message+' AUCUNE DONNÉE RÉSEAU N’A ÉTÉ MODIFIÉE. VERROUILLEZ LE TERMINAL ET RECONNECTEZ-VOUS.');
+}
 function ordreQueueSync(){
  if(!ordreSyncReady||!ordreAuth?.matricule||ADMIN_MODE||!S.matricule||S.matricule!==ordreAuth.matricule)return;
  if(ordreSyncTimer)clearTimeout(ordreSyncTimer);
@@ -1718,12 +1734,12 @@ async function ordreSyncNow(){
  try{
   const token=await ordreValidToken();if(!token)return;
   const current=await ordreGetServerProgress(token);
-  if(ordreLegacySummaryOnly&&current?.state&&!current.state.profile)return;
+  if(current&&!current.state?.profile){ordreStopUnsafeSync('SAUVEGARDE RÉSEAU INCOMPLÈTE.');return;}
+  if(ordreIsRegression(ordreProgressSnapshot(),current?.state?.profile)){ordreStopUnsafeSync('PROGRESSION PLUS AVANCÉE SUR LE RÉSEAU.');return;}
   // Ne jamais écraser une sauvegarde modifiée ailleurs après notre dernière lecture.
   if(current?.updated_at&&ordreServerVersion&&current.updated_at!==ordreServerVersion){
    console.warn('Dossier modifié sur un autre appareil : synchronisation interrompue.');
-   ordreSyncReady=false;
-   alert('UNE SAUVEGARDE PLUS RÉCENTE EXISTE SUR LE RÉSEAU. VERROUILLEZ LE TERMINAL PUIS RECONNECTEZ-VOUS POUR LA RÉCUPÉRER. AUCUNE DONNÉE DISTANTE N’A ÉTÉ REMPLACÉE.');
+   ordreStopUnsafeSync('DOSSIER MODIFIÉ SUR UN AUTRE APPAREIL.');
    return;
   }
   if(current?.updated_at&&!ordreServerVersion){
@@ -1741,10 +1757,19 @@ async function ordreSyncNow(){
    decisions:{eval1:S.eval1?.decision??null,eval2:S.eval2?.decision??null,eval3:S.eval3?.decision??null,eval4:S.eval4?.decision??null,eval5:S.eval5?.decision??null},
    synced_at:new Date().toISOString()};
   const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':finished===0?'NON_COMMENCE':'EN_COURS',state}];
-  await ordreNetFetch('/rest/v1/dossier_progress?on_conflict=player_id,dossier_id',{method:'POST',token,headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
-  // Actualiser la version connue pour détecter les autres sessions.
-  const updated=await ordreGetServerProgress(token);
-  ordreServerVersion=updated?.updated_at||null;
+  // Mise à jour conditionnelle : l'horodatage connu doit encore correspondre.
+  // Une autre session ne peut plus être écrasée entre notre lecture et l'écriture.
+  if(current){
+   if(!ordreServerVersion){ordreStopUnsafeSync('VERSION RÉSEAU INCONNUE.');return;}
+   const patchPath='/rest/v1/dossier_progress?player_id=eq.'+encodeURIComponent(ordreAuth.player_id)+'&dossier_id=eq.D000&updated_at=eq.'+encodeURIComponent(ordreServerVersion);
+   const changed=await ordreNetFetch(patchPath,{method:'PATCH',token,headers:{'Prefer':'return=representation'},body:JSON.stringify({stage_id:stage,status:body[0].status,state,updated_at:new Date().toISOString()})});
+   if(!Array.isArray(changed)||changed.length!==1){ordreStopUnsafeSync('CONFLIT DE SYNCHRONISATION.');return;}
+   ordreServerVersion=changed[0].updated_at;
+  }else{
+   const created=await ordreNetFetch('/rest/v1/dossier_progress',{method:'POST',token,headers:{'Prefer':'return=representation'},body:JSON.stringify(body)});
+   if(!Array.isArray(created)||created.length!==1)throw Error('CRÉATION DU DOSSIER NON CONFIRMÉE.');
+   ordreServerVersion=created[0].updated_at;
+  }
   ordrePendingChanges=false;
  }finally{ordreSyncBusy=false}
 }
