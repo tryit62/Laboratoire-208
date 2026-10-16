@@ -1389,15 +1389,45 @@ ENREGISTREMENT...
   }
   setTimeout(next,900);
 }
-function oathTransition(){
-  S.serment=true;
-  S.sermentDisponible=false;
-  S.statut='INITIÉ';
-  S.accreditation='OMBRE I';
-  S.initiationDate=new Date().toISOString();
-  save();
-  document.body.classList.remove('initiated');
-  initiateCinematic();
+// V221 BÊTA : la cérémonie ne commence qu'après confirmation distante du serment.
+let ordreOathTransitionBusy=false;
+async function oathTransition(){
+  if(ordreOathTransitionBusy)return;
+  ordreOathTransitionBusy=true;
+  const previous={serment:S.serment,sermentDisponible:S.sermentDisponible,statut:S.statut,
+    accreditation:S.accreditation,initiationDate:S.initiationDate};
+  try{
+    if(!ordreSyncReady||ordreLockActive||!ordreAuth?.player_id||!navigator.onLine)
+      throw Error('CONNEXION AU RÉSEAU REQUISE POUR VALIDER LE SERMENT.');
+    // Ne pas confondre une sauvegarde antérieure en cours avec celle du serment.
+    for(let i=0;ordreSyncBusy&&i<40;i++)await new Promise(resolve=>setTimeout(resolve,250));
+    if(ordreSyncBusy)throw Error('SYNCHRONISATION PRÉCÉDENTE EN COURS.');
+    S.serment=true;
+    S.sermentDisponible=false;
+    S.statut='INITIÉ';
+    S.accreditation='OMBRE I';
+    S.initiationDate=new Date().toISOString();
+    save();
+    if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
+    await ordreSyncNow();
+    if(!ordreSyncReady||ordrePendingChanges||!ordreServerVersion)
+      throw Error('SAUVEGARDE DU SERMENT NON CONFIRMÉE.');
+    const token=await ordreValidToken();
+    if(!token)throw Error('SESSION RÉSEAU EXPIRÉE.');
+    const remote=await ordreGetServerProgress(token);
+    if(remote?.state?.profile?.serment!==true)
+      throw Error('LE SERVEUR N’A PAS CONFIRMÉ LE SERMENT.');
+    document.body.classList.remove('initiated');
+    initiateCinematic();
+  }catch(e){
+    Object.assign(S,previous);
+    // Conserver le profil local cohérent sans écraser silencieusement le serveur.
+    localStorage.setItem('ordre_terminal',JSON.stringify(S));
+    profileSave();
+    ordrePendingChanges=false;
+    alert('VALIDATION DU SERMENT INTERROMPUE : '+e.message+'\nVotre progression précédente est conservée. Reconnectez-vous puis vérifiez votre dossier avant de réessayer.');
+    initiateHome();
+  }finally{ordreOathTransitionBusy=false;}
 }
 function initiateCinematic(){
   /* La V1.4.0 est désormais la cérémonie canonique. */
@@ -1783,7 +1813,7 @@ async function ordreSyncNow(){
    statutLocal:S.statut||'CANDIDAT',affectationLocale:S.affectationDone?S.affectation:null,
    decisions:{eval1:S.eval1?.decision??null,eval2:S.eval2?.decision??null,eval3:S.eval3?.decision??null,eval4:S.eval4?.decision??null,eval5:S.eval5?.decision??null},
    synced_at:new Date().toISOString()};
-  const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':(finished>0||evals.some(e=>(Number(e?.step)||0)>0))?'EN_COURS':'NON_COMMENCE',state}];
+  const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':finished===0?'NON_COMMENCE':'EN_COURS',state}];
   // Mise à jour conditionnelle : l'horodatage connu doit encore correspondre.
   // Une autre session ne peut plus être écrasée entre notre lecture et l'écriture.
   if(current){
