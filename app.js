@@ -1783,7 +1783,7 @@ async function ordreSyncNow(){
    statutLocal:S.statut||'CANDIDAT',affectationLocale:S.affectationDone?S.affectation:null,
    decisions:{eval1:S.eval1?.decision??null,eval2:S.eval2?.decision??null,eval3:S.eval3?.decision??null,eval4:S.eval4?.decision??null,eval5:S.eval5?.decision??null},
    synced_at:new Date().toISOString()};
-  const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':finished===0?'NON_COMMENCE':'EN_COURS',state}];
+  const body=[{player_id:ordreAuth.player_id,dossier_id:'D000',stage_id:stage,status:S.serment?'TERMINE':(finished>0||evals.some(e=>(Number(e?.step)||0)>0))?'EN_COURS':'NON_COMMENCE',state}];
   // Mise à jour conditionnelle : l'horodatage connu doit encore correspondre.
   // Une autre session ne peut plus être écrasée entre notre lecture et l'écriture.
   if(current){
