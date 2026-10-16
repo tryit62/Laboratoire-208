@@ -1330,7 +1330,12 @@ function assignmentMaterialSuspended(missing){
 /* V2.0.3 — pont vers le module V1.4.0 EXACT */
 function ceremonyUnlock(){}
 function ceremonyOpen(mode="first"){
- try{sessionStorage.setItem("OCI_CEREMONY_PAYLOAD",JSON.stringify({mode,matricule:S.matricule,division:S.affectation}));}catch(e){}
+ try{
+  sessionStorage.setItem("OCI_CEREMONY_PAYLOAD",JSON.stringify({mode,matricule:S.matricule,division:S.affectation}));
+  // V222 : autorisation éphémère, propre à cet onglet et uniquement au retour de cérémonie.
+  if(!ADMIN_MODE && !ordreLockActive && ordreAuth?.matricule===S.matricule)
+    sessionStorage.setItem("OCI_CEREMONY_AUTH",JSON.stringify(ordreAuth));
+ }catch(e){}
  location.href="ceremony.html?v=206";
 }
 function replayInitiationCeremony(){ceremonyOpen("replay");}
@@ -1499,13 +1504,55 @@ async function ordreInitUpdates(){
 }
 ordreInitUpdates();
 
-window.addEventListener("load",()=>{
- let r=null;try{r=sessionStorage.getItem("OCI_CEREMONY_RESULT")}catch(e){}
- if(!r)return;
- try{sessionStorage.removeItem("OCI_CEREMONY_RESULT")}catch(e){}
- if(r==="complete"){S.ceremonieInitiationVue=true;S.initieAccueilVu=true;save();applyInitiateTheme();initiateHome();}
- else if(r==="replay"){applyInitiateTheme();initiateArchives();}
-});
+/* V222 : reprise authentifiée de la cérémonie, avant tout écran d'identification.
+   Le serveur reste la source de vérité ; aucune progression locale n'est injectée. */
+async function ordreV222ResumeCeremony(){
+ let result=null, bridge=null;
+ try{
+  result=sessionStorage.getItem('OCI_CEREMONY_RESULT');
+  bridge=JSON.parse(sessionStorage.getItem('OCI_CEREMONY_AUTH')||'null');
+ }catch(e){}
+ if(!result || !['complete','replay'].includes(result)){boot();return;}
+ if(!bridge?.access_token||!bridge?.player_id||!bridge?.matricule){
+  boot();return;
+ }
+ shell('<h1 class="title">RETOUR DE CÉRÉMONIE</h1><div class="terminal" id="v222Status">RÉTABLISSEMENT DU CANAL SÉCURISÉ...</div>','INITIATION // SYNCHRONISATION');
+ try{
+  ordreAuth=bridge;
+  ordreLockActive=false;
+  const token=await ordreValidToken();
+  if(!token)throw Error('SESSION EXPIRÉE');
+  // Ne jamais faire confiance à un matricule provenant seulement de sessionStorage.
+  const users=await ordreNetFetch('/rest/v1/players?select=id,matricule,user_id&id=eq.'+encodeURIComponent(bridge.player_id),{token});
+  if(!Array.isArray(users)||users.length!==1||users[0].matricule!==bridge.matricule||users[0].user_id!==bridge.user_id)
+    throw Error('IDENTITÉ NON CONFIRMÉE');
+  await ordreRestoreProgress(token);
+  ordrePendingChanges=false;ordreSyncReady=true;ordreScheduleLock();
+  if(!S.serment||S.statut!=='INITIÉ')throw Error('INITIATION NON CONFIRMÉE SUR LE RÉSEAU');
+  if(result==='complete'){
+   S.ceremonieInitiationVue=true;
+   S.initieAccueilVu=true;
+   save();
+   if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
+   await ordreSyncNow();
+   if(!ordreSyncReady||ordrePendingChanges)throw Error('SAUVEGARDE NON CONFIRMÉE');
+   const verified=await ordreGetServerProgress(await ordreValidToken());
+   if(verified?.state?.profile?.ceremonieInitiationVue!==true||verified?.state?.profile?.initieAccueilVu!==true)
+    throw Error('CLÔTURE NON CONFIRMÉE PAR SUPABASE');
+  }
+  sessionStorage.removeItem('OCI_CEREMONY_RESULT');
+  sessionStorage.removeItem('OCI_CEREMONY_AUTH');
+  sessionStorage.removeItem('OCI_CEREMONY_PAYLOAD');
+  if(result==='replay')initiateArchives();else initiateHome();
+ }catch(e){
+  // On conserve le marqueur de fin pour réessayer, sans valider localement à tort.
+  ordreClearAuth();ordreLockActive=true;
+  shell('<h1 class="title">RETOUR DE CÉRÉMONIE EN ATTENTE</h1><div class="terminal" id="v222Error"></div><div class="menu"><button class="btn primary" id="v222Retry">[ RÉESSAYER LA SYNCHRONISATION ]</button><button class="btn" id="v222Login">[ CONNEXION PERSONNELLE ]</button></div>','INITIATION // VÉRIFICATION');
+  document.getElementById('v222Error').textContent='La cérémonie est terminée, mais la sauvegarde n’a pas été confirmée : '+e.message;
+  document.getElementById('v222Retry').onclick=ordreV222ResumeCeremony;
+  document.getElementById('v222Login').onclick=()=>{sessionStorage.removeItem('OCI_CEREMONY_AUTH');sessionStorage.removeItem('OCI_CEREMONY_RESULT');ordreShowLink()};
+ }
+}
 
 
 /* V208 TEST — Liaison facultative du profil local à une identité Supabase authentifiée.
@@ -2042,5 +2089,5 @@ async function ordreV213Read(docId){
  }catch(e){out.textContent='LECTURE REFUSÉE : '+e.message}
 }
 
-// V214: start only after authentication and locking routines are initialized.
-boot();
+// V222: traiter le retour de cérémonie avant le démarrage ordinaire.
+ordreV222ResumeCeremony();
