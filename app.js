@@ -1,4 +1,4 @@
-/* ORDRE TERMINAL V218 — restauration stricte et synchronisation anti-regression */
+/* ORDRE TERMINAL V219 — restauration stricte et synchronisation anti-regression */
 const $=s=>document.querySelector(s); const app=$('#app');
 const defaults={matricule:'',statut:'CANDIDAT',accreditation:'0',affectation:'—',inventaire:null,progression:0,messages:1,installed:false,
 eval1:{step:0,factAttempts:0,epistemic:null,controlAttempts:0,decision:null,versions:null,memoryCount:null,cardAnswers:[],sourceObservation:null,complete:false},
@@ -1543,17 +1543,45 @@ async function ordreValidToken(){
 /* V214 BETA — Enrôlement via serveur. Codes jamais enregistrés dans les fichiers du terminal. */
 function ordreShowLink(){
  ordreLockActive=true;
- shell(`<h1 class="title">LIAISON AU RÉSEAU // V214 BÊTA</h1>
- <p class="sub">Un candidat reçoit un matricule et un code d'activation individuel dans sa boîte D000.</p>
- <div class="menu"><button class="btn primary" id="v214Activate">[ PREMIÈRE ACTIVATION ]</button>
- <button class="btn" id="v214Login">[ CONNEXION PERSONNELLE ]</button>
- <button class="btn" id="v214Legacy">[ ANCIEN COMPTE BÊTA — TEST UNIQUEMENT ]</button>
- <button class="btn" id="v214Back">[ ACCUEIL SÉCURISÉ ]</button></div>
- <p class="tiny">PROTOCOLE BÊTA : accès réservé aux matricules de test.</p>`,'RÉSEAU // IDENTIFICATION');
+ shell(`<section class="ordre-gateway" aria-label="Identification des candidats">
+ <style>
+ .ordre-gateway{max-width:860px;margin:clamp(16px,5vh,64px) auto 0;padding:clamp(14px,3vw,36px);border:1px solid rgba(190,198,186,.22);background:linear-gradient(155deg,rgba(24,29,28,.74),rgba(5,7,7,.9));box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);color:#d8ded6}
+ .ordre-gateway .gw-kicker{font:11px/1.7 'Courier New',monospace;letter-spacing:.28em;color:#a4b4aa;text-align:center}
+ .ordre-gateway .gw-rule{height:1px;background:linear-gradient(90deg,transparent,#6b8176,transparent);margin:19px auto 27px;max-width:330px}
+ .ordre-gateway h1{font-family:'Courier New',monospace;font-size:clamp(23px,4.3vw,39px);font-weight:400;letter-spacing:.14em;line-height:1.3;text-align:center;margin:0;color:#f0f0e8}
+ .ordre-gateway .gw-intro{font:13px/1.85 'Courier New',monospace;text-align:center;color:#b2bbb2;max-width:600px;margin:20px auto 30px}
+ .ordre-gateway .gw-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+ .ordre-gateway .gw-card{border:1px solid rgba(172,187,175,.42);padding:25px 21px 20px;background:rgba(8,11,11,.66);display:flex;flex-direction:column;min-height:265px}
+ .ordre-gateway .gw-number{font:11px 'Courier New',monospace;color:#8eab9b;letter-spacing:.2em}
+ .ordre-gateway h2{font:normal clamp(16px,2.3vw,20px)/1.5 'Courier New',monospace;letter-spacing:.09em;color:#e6ebe4;margin:19px 0 10px}
+ .ordre-gateway .gw-desc{font:12px/1.8 'Courier New',monospace;color:#aab4aa;flex:1;margin:0 0 24px}
+ .ordre-gateway .gw-action{font:12px/1.4 'Courier New',monospace;letter-spacing:.09em;background:transparent;color:#e5ece5;border:1px solid #9caca0;padding:14px 10px;cursor:pointer;min-height:48px;width:100%;transition:background .15s,color .15s}
+ .ordre-gateway .gw-action:hover,.ordre-gateway .gw-action:focus-visible{background:#d9e2d8;color:#111917;outline:2px solid #a6c0b0;outline-offset:3px}
+ .ordre-gateway .gw-footer{text-align:center;margin-top:26px;font:10px/1.8 'Courier New',monospace;letter-spacing:.15em;color:#87998d}
+ @media(max-width:610px){.ordre-gateway .gw-options{grid-template-columns:1fr}.ordre-gateway .gw-card{min-height:0;padding:21px}.ordre-gateway .gw-desc{margin-bottom:18px}.ordre-gateway{margin-top:12px}}
+ </style>
+ <div class="gw-kicker">ORDRE DES CINQ OMBRES · PROTOCOLE D000</div>
+ <div class="gw-rule"></div>
+ <h1>LIAISON AU RÉSEAU</h1>
+ <p class="gw-intro">Identifiez-vous pour accéder à votre dossier personnel. Choisissez la procédure correspondant à votre situation.</p>
+ <div class="gw-options">
+  <article class="gw-card">
+   <div class="gw-number">PROCÉDURE 01 / NOUVEAU CANDIDAT</div>
+   <h2>PREMIÈRE ACTIVATION</h2>
+   <p class="gw-desc">Vous venez de recevoir votre dossier D000 ? Munissez-vous du matricule et du code d’activation remis par l’Ordre.</p>
+   <button class="gw-action" id="v214Activate" type="button">[ ACTIVER MON DOSSIER → ]</button>
+  </article>
+  <article class="gw-card">
+   <div class="gw-number">PROCÉDURE 02 / DOSSIER EXISTANT</div>
+   <h2>CONNEXION PERSONNELLE</h2>
+   <p class="gw-desc">Votre dossier est déjà activé ? Retrouvez votre progression avec votre matricule et votre code personnel.</p>
+   <button class="gw-action" id="v214Login" type="button">[ ACCÉDER À MON DOSSIER → ]</button>
+  </article>
+ </div>
+ <div class="gw-footer">RÉSEAU SÉCURISÉ // IDENTIFICATION INDIVIDUELLE // ACCÈS CONTRÔLÉ</div>
+ </section>`,'RÉSEAU // IDENTIFICATION');
  $('#v214Activate').onclick=ordreV214Activate;
  $('#v214Login').onclick=ordreV214Login;
- $('#v214Legacy').onclick=ordreLegacyLink;
- $('#v214Back').onclick=ordreShowLink;
 }
 function ordreV214Email(m){return 'agent-'+m.toLowerCase()+'@example.com'}
 async function ordreV214CompleteLink(x){
@@ -1561,12 +1589,11 @@ async function ordreV214CompleteLink(x){
  const rows=await ordreNetFetch('/rest/v1/players?select=id,matricule,user_id&user_id=eq.'+encodeURIComponent(x.user.id),{token});
  if(!Array.isArray(rows)||rows.length!==1)throw Error('AUCUN DOSSIER JOUEUR AUTORISÉ POUR CETTE SESSION.');
  const linked=rows[0];
- if(S.matricule&&S.matricule!==linked.matricule&&!profileLoad(linked.matricule)){
-  throw Error('UN AUTRE MATRICULE LOCAL EST CHARGÉ. VÉRIFIEZ AVANT DE POURSUIVRE.');
- }
+ // V219 : un autre candidat peut utiliser le même navigateur.
+ // L'identité est vérifiée par Supabase Auth et la liaison user_id dans players.
+ // Ne pas charger un profil local avant la restauration distante.
  ordreAuth={access_token:token,refresh_token:x.refresh_token,expires_at:Math.floor(Date.now()/1000)+x.expires_in,user_id:x.user.id,player_id:linked.id,matricule:linked.matricule};
  localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
- profileSwitch(linked.matricule);
  try{await ordreRestoreProgress(token)}catch(e){ordreClearAuth();ordreLockActive=true;throw e}
  ordrePendingChanges=false;ordreSyncReady=true;ordreScheduleLock();
  // Ne pas écrire automatiquement au simple fait de se connecter.

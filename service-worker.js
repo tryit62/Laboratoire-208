@@ -1,5 +1,5 @@
 /* Ordre V207: activation demandée par le joueur, pas de purge du stockage local. */
-const CACHE='ordre-terminal-v218';
+const CACHE='ordre-terminal-v220';
 const PREFIX='ordre-terminal-';
 const CORE=['./index.html','./style.css','./app.js','./manifest.webmanifest','./service-worker.js'];
 const OPTIONAL=['./','./order-logo.png','./apple-touch-icon.png','./icon-192.png','./icon-512.png','./division-1-oeil-fendu.png','./division-2-flamme-inversee.png','./division-3-main-cassee.png','./division-4-spirale-os.png','./division-5-sablier-noir.png','./ceremony.html','./ceremonie.mp3','./oeil.png','./flamme.png','./main.png','./spirale.png','./sablier.png','./ordre.png'];
@@ -25,7 +25,7 @@ self.addEventListener('fetch',e=>{
   // Online first for HTML navigation, offline fallback to cached index.
   e.respondWith(fetch(req).catch(async()=>await caches.match('./index.html')||Response.error()));return;
  }
- // V218: always fetch fresh JS/CSS while online; cached files only when offline.
+ // V219: always fetch fresh JS/CSS while online; cached files only when offline.
  if(url.pathname.endsWith('/app.js')||url.pathname.endsWith('/style.css')){
   e.respondWith(fetch(req).then(async r=>{if(r.ok){const c=await caches.open(CACHE);await c.put(req,r.clone())}return r}).catch(async()=>await caches.match(req)||await caches.match(url.origin+url.pathname)||Response.error()));return;
  }
