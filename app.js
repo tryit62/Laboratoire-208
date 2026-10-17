@@ -275,10 +275,10 @@ function initiateHome(){if(!ordreRequireConnection())return;
  const logo=divisionLogo(S.affectation);
  let entrance='';
  try{const k='OCI_V225_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v225-entrance';}}catch(e){}
- const grade=ordreV211Esc(ordreV226Grade());
+ const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
- const mission=S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'EN ATTENTE DE DIRECTIVE';
+ const mission=S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
  const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v225-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
  app.innerHTML=`<section class="v225-screen${entrance}" aria-label="Accueil Initié">
    <header class="v225-header"><div class="v225-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v225-brand-name">ORDRE DES CINQ OMBRES</span><span class="v225-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v225-clearance">ACCÈS ${grade}</span></header>
@@ -286,15 +286,16 @@ function initiateHome(){if(!ordreRequireConnection())return;
     <section class="v225-identity"><div class="v225-identity-copy"><span class="v225-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v225-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div></section>
     <section class="v225-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission&&ordreAuth?.matricule===S.matricule?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
     <nav class="v225-grid" aria-label="Espaces réservés aux Initiés">
-      <button onclick="initiateMissions()"><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id):'EN ATTENTE DE DIRECTIVE'}</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateMissions()"><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v225-card-arrow">↗</span></button>
       <button onclick="initiateMessages()"><span class="v225-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v225-card-name">MESSAGERIE</span><span class="v225-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v225-card-arrow">↗</span></button>
       <button onclick="initiateArchives()"><span class="v225-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v225-card-name">ARCHIVES</span><span class="v225-card-desc">ACCÈS ${grade}</span><span class="v225-card-arrow">↗</span></button>
       <button onclick="initiateProfile()"><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
     </nav></div>
    </main>
-   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v225-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
+   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button class="v225-notifications" id="v225Notifications" type="button" aria-label="Notifications de la messagerie"><span class="v225-bell" aria-hidden="true"></span><span class="v225-bell-count" id="v225BellCount">${ordreV210UnreadCount()}</span></button>${lock}</footer>
  </section>`;
- const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;
+ const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
+  const bellBtn=document.getElementById('v225Notifications');if(bellBtn)bellBtn.onclick=initiateMessages;
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
@@ -2261,11 +2262,13 @@ shell=function(...args){ordreV113Shell(...args);ordreV113Enhance(args[1]);};
 
 /* V1.1.5 — restrained live states; purely presentational, no new privileges or lore. */
 function ordreV115HomeSignals(){
- const screen=document.querySelector('.v224-screen');if(!screen)return;
+ const screen=document.querySelector('.v225-screen');if(!screen)return;
  const count=ordreV210UnreadCount();
+ const badge=screen.querySelector('#v225BellCount');if(badge)badge.textContent=String(count);
+ const bell=screen.querySelector('#v225Notifications');if(bell){bell.classList.toggle('v225-has-unread',count>0);bell.setAttribute('aria-label',count+' notification(s) non lue(s) — ouvrir la messagerie');}
  const mail=screen.querySelector('button[onclick="initiateMessages()"]');
  if(mail){mail.classList.toggle('v115-pending',count>0);mail.setAttribute('aria-label','Messagerie, '+count+' transmission(s) non lue(s)');
-  const desc=mail.querySelector('.v224-card-desc');if(desc)desc.textContent=count?count+' TRANSMISSION(S) NON LUE(S)':'AUCUNE TRANSMISSION NON LUE';}
+  const desc=mail.querySelector('.v225-card-desc');if(desc)desc.textContent=count?count+' TRANSMISSION(S) NON LUE(S)':'AUCUNE TRANSMISSION NON LUE';}
  const missions=screen.querySelector('button[onclick="initiateMissions()"]');
  if(missions){const assigned=!!(S.reseauMission&&ordreAuth?.matricule===S.matricule);missions.classList.toggle('v115-assigned',assigned);}
  const directives=screen.querySelector('.v224-directives');if(directives)directives.textContent='TRANSMISSIONS NON LUES : '+count;
