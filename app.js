@@ -270,12 +270,24 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
    }
  },5000);
 }
+/* Animation d'ouverture : une fois par chargement du Terminal, pas une fois par sessionStorage. */
+let ordreAccueilAnimationVue=false;
+/* Le statut CANDIDAT renvoyé par un ancien profil distant ne doit pas écraser
+   l'accréditation déjà acquise par un Initié. Aucune permission n'est modifiée. */
+function ordreInitiateDisplayedGrade(){
+ const grades=[S.reseauGrade,S.accreditation];
+ for(const value of grades){
+  const grade=String(value||'').trim().toUpperCase();
+  if(/^OMBRE\s+(I|II|III)$/.test(grade))return grade;
+ }
+ return 'OMBRE I';
+}
 function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
- let entrance='';
- try{const k='OCI_V225_ENTRANCE_20261017_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v225-entrance';}}catch(e){}
- const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
+ const entrance=ordreAccueilAnimationVue?'':' v225-entrance';
+ ordreAccueilAnimationVue=true;
+ const grade=ordreV211Esc(ordreInitiateDisplayedGrade());
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
  const mission=S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
@@ -428,7 +440,7 @@ function cartoBind(){
 function initiateProfile(){
  shell(`<h1 class="title">DOSSIER PERSONNEL</h1>
  <div class="profile-sheet">
- <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>${ordreV211Esc(S.reseauGrade||'OMBRE I')}</b></div>
+ <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>${ordreV211Esc(ordreInitiateDisplayedGrade())}</b></div>
  <div><span>DIVISION</span><b>${ordreV211Esc(S.reseauDivision||S.affectation||'—')}</b></div><div><span>MATRICULE</span><b>${ordreV211Esc(S.matricule||'—')}</b></div>
  <div><span>DATE D'INITIATION</span><b>${S.initiationDate||'ENREGISTRÉE'}</b></div>
  </div>
