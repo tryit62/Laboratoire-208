@@ -1195,3 +1195,12 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 .v11-authority-strip span:last-child{opacity:.73}
 .v11-authority-note{margin:22px 0 6px;padding-top:10px;border-top:1px solid rgba(188,164,112,.19);color:#a99a7c;font:11px/1.6 Courier New,monospace;letter-spacing:.025em}
 @media(max-width:600px){.v11-authority-strip{font-size:10px;letter-spacing:.04em}}
+
+/* V1.1.1: Archive access presentation only — does not replace real authorization. */
+.v111-archive-notice,.v111-doc-head,.v111-doc-end{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#bca77f;font:10px/1.6 'Courier New',monospace;letter-spacing:.08em}
+.v111-archive-notice{border-top:1px solid rgba(185,156,103,.25);border-bottom:1px solid rgba(185,156,103,.25);padding:12px 2px;margin-top:24px}
+.v111-doc-head{border-bottom:1px solid rgba(185,156,103,.32);padding-bottom:14px;margin-bottom:23px}
+.v111-doc-authority{border-left:2px solid rgba(185,156,103,.65);padding:11px 15px;margin:22px 0 28px;color:#bba983;background:rgba(185,156,103,.045);font:11px/1.8 'Courier New',monospace;letter-spacing:.025em}
+.v111-doc-end{border-top:1px solid rgba(185,156,103,.25);margin-top:30px;padding-top:14px;opacity:.8}
+.locked-archive{opacity:.65;cursor:not-allowed}
+@media(max-width:600px){.v111-archive-notice,.v111-doc-head,.v111-doc-end{font-size:9px}.v111-doc-authority{font-size:10px}}
