@@ -1282,3 +1282,51 @@ body.initiated:has(.v225-screen) #app{height:100dvh}
 .v225-screen.v225-entrance .v225-grid button:nth-child(4){animation-delay:1.24s}
 @keyframes v225ModuleUnlock{from{opacity:0;transform:translateY(5px);filter:brightness(.65)}to{opacity:1;transform:none;filter:brightness(1)}}
 @media(prefers-reduced-motion:reduce){.v225-screen.v225-entrance .v225-grid button{animation:none!important}}
+
+/* Ouverture progressive de l'accueil Initié seulement. */
+.v225-screen.v225-entrance{animation:v225OpenScreen .7s ease-out both}
+.v225-screen.v225-entrance .v225-seal{animation:v225OpenSeal .85s .18s ease-out both}
+.v225-screen.v225-entrance .v225-identity{animation:v225OpenIdentity .65s .48s ease-out both}
+.v225-screen.v225-entrance .v225-mission{animation:v225OpenIdentity .55s .8s ease-out both}
+.v225-screen.v225-entrance .v225-grid button{animation:v225OpenModule .42s ease-out both}
+.v225-screen.v225-entrance .v225-grid button:nth-child(1){animation-delay:1.1s}
+.v225-screen.v225-entrance .v225-grid button:nth-child(2){animation-delay:1.38s}
+.v225-screen.v225-entrance .v225-grid button:nth-child(3){animation-delay:1.66s}
+.v225-screen.v225-entrance .v225-grid button:nth-child(4){animation-delay:1.94s}
+.v225-screen.v225-entrance .v225-footer{animation:v225OpenIdentity .5s 2.12s ease-out both}
+@keyframes v225OpenScreen{from{opacity:0}to{opacity:1}}
+@keyframes v225OpenSeal{from{opacity:0;filter:brightness(.3);transform:translateX(-9px)}to{opacity:1;filter:brightness(1);transform:none}}
+@keyframes v225OpenIdentity{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes v225OpenModule{from{opacity:0;filter:brightness(.45);transform:translateY(7px)}to{opacity:1;filter:brightness(1);transform:none}}
+@media(prefers-reduced-motion:reduce){.v225-screen.v225-entrance,.v225-screen.v225-entrance .v225-seal,.v225-screen.v225-entrance .v225-identity,.v225-screen.v225-entrance .v225-mission,.v225-screen.v225-entrance .v225-grid button,.v225-screen.v225-entrance .v225-footer{animation:none!important}}
+
+/* Pastilles de notifications propres aux quatre rubriques Initié. */
+.v225-grid>button{position:relative}
+.v225-grid .v225-rubric-badge{position:absolute;z-index:3;right:13px;top:10px;display:inline-flex;align-items:center;justify-content:center;min-width:23px;height:23px;padding:0 5px;border-radius:99px;background:#c5a46b;color:#11100c;border:1px solid #e3c98d;font:700 11px/1 "Courier New",monospace;letter-spacing:0;box-shadow:0 0 10px rgba(197,164,107,.25);pointer-events:none}
+.v225-grid .v225-rubric-badge[hidden]{display:none!important}
+.v225-screen.v225-entrance .v225-rubric-badge{animation:none!important}
+
+
+/* V1.1.7 — Finition institutionnelle : seulement l'accueil Initié.
+   Le Terminal expose des droits, jamais des promesses de contenu.
+   Les couleurs et emblèmes officiels restent intacts. */
+.v225-screen{position:relative;isolation:isolate}
+.v225-screen::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.23;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(215,187,126,.025) 3px 4px);mix-blend-mode:screen}
+.v225-screen > *{position:relative;z-index:1}
+.v225-header{position:relative}
+.v225-header::after{content:"";position:absolute;left:0;bottom:-1px;width:clamp(32px,8vw,105px);height:1px;background:#d6b976;opacity:.7}
+.v225-seal{position:relative;overflow:hidden}
+.v225-seal::after{content:"ARCHIVES DE DIVISION  /  CONSULTATION RESTREINTE";position:absolute;left:12px;right:12px;bottom:12%;text-align:center;font-size:clamp(6px,.55vw,9px);letter-spacing:.09em;color:#bda676;opacity:.52;pointer-events:none}
+.v225-emblem img{transition:filter .35s ease;user-select:none}
+.v225-identity{position:relative}
+.v225-identity::before{content:"";position:absolute;left:0;top:0;width:2px;height:100%;background:linear-gradient(transparent,rgba(209,178,112,.45),transparent);pointer-events:none}
+.v225-grid button{transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease}
+.v225-grid button:focus-visible{outline:2px solid #e4c98f;outline-offset:2px}
+.v225-grid button:active{background:#2c2419}
+.v225-grid button:hover .v225-card-arrow,.v225-grid button:focus-visible .v225-card-arrow{color:#f2d7a1}
+.v225-grid .v225-rubric-badge{font-variant-numeric:tabular-nums}
+.v225-footer .v225-notifications:focus-visible,.v225-footer .v225-lock:focus-visible{outline:2px solid #e4c98f;outline-offset:2px}
+.v225-network{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:600px) and (orientation:portrait){.v225-seal::after{display:none}.v225-grid button{gap:4px}.v225-card-name{line-height:1.1}}
+@media(max-height:510px) and (orientation:landscape){.v225-seal::after{display:none}.v225-grid button{gap:3px}}
+@media(prefers-reduced-motion:reduce){.v225-emblem img,.v225-grid button{transition:none!important}}
