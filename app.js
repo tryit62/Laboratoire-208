@@ -285,12 +285,17 @@ function initiateHome(){if(!ordreRequireConnection())return;
 function initBack(){initiateHome()}
 function initiateMissions(){
  const mission=S.reseauMission;
- if(mission&&ordreAuth?.matricule===S.matricule){
-  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // OMBRE I');
-  $('#v211MissionCode').textContent=mission.id;$('#v211MissionLabel').textContent=mission.label;return;
+ const assigned=Boolean(mission&&ordreAuth?.matricule===S.matricule);
+ const frame=`<div class="v112-mission-head"><span>ORDRE DES CINQ OMBRES // RÉSEAU OPÉRATIONNEL</span><span>REGISTRE DES AFFECTATIONS</span></div><h1 class="title">MISSIONS</h1><p class="v112-mission-intro">Consultation du registre individuel. Les informations affichées sont limitées aux directives effectivement enregistrées pour cette session.</p>`;
+ if(assigned){
+  shell(frame+`<section class="v112-mission-sheet" aria-label="Affectation enregistrée"><div class="v112-mission-status"><span>AFFECTATION INDIVIDUELLE</span><strong>ENREGISTRÉE</strong></div><div class="v112-mission-grid"><div><small>RÉFÉRENCE OPÉRATIONNELLE</small><strong id="v112MissionCode"></strong></div><div><small>INTITULÉ DE L'AFFECTATION</small><strong id="v112MissionLabel"></strong></div><div><small>ÉTAT DU DOSSIER</small><strong>CONTENU NON TRANSMIS</strong></div><div><small>CONSULTATION</small><strong>NOTICE D'AFFECTATION UNIQUEMENT</strong></div></div><p class="v112-mission-notice">L'affectation figure dans votre registre. Aucun ordre d'exécution ni document opérationnel complémentaire n'est disponible à ce stade.</p><div class="v112-mission-end">FIN DE NOTICE // DOSSIER EN ATTENTE DE TRANSMISSION</div></section><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
+  document.getElementById('v112MissionCode').textContent=mission.id;
+  document.getElementById('v112MissionLabel').textContent=mission.label;
+  return;
  }
- shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
-} 
+ shell(frame+`<section class="v112-mission-sheet" aria-label="Aucune affectation"><div class="v112-mission-status"><span>REGISTRE INDIVIDUEL</span><strong>EN ATTENTE</strong></div><div class="v112-mission-empty">AUCUNE AFFECTATION ENREGISTRÉE</div><p class="v112-mission-notice">Votre intégration au réseau est en cours. Une première affectation vous sera transmise par votre Division lorsqu'elle sera autorisée.</p><div class="v112-mission-end">FIN DE CONSULTATION // AUCUNE DIRECTIVE DISPONIBLE</div></section><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
+}
+
 const INITIATE_MESSAGES=[
  {from:'ADMINISTRATION',subject:'CHANGEMENT DE STATUT',date:'AUJOURD’HUI',preview:'Confirmation de votre nouveau niveau d’accès.',body:()=>`Votre dossier candidat a été clôturé.\n\nVotre statut est désormais INITIÉ.\nAccréditation attribuée : OMBRE I.\n\nLes informations accessibles restent soumises au principe de compartimentation. Toute consultation excédant votre niveau d’autorisation doit être interrompue et signalée.`},
  {from:()=>S.affectation,subject:'AFFECTATION DE DIVISION',date:'AUJOURD’HUI',preview:'Communication réservée à votre affectation.',body:()=>divisionMeta(S.affectation).msg},
@@ -2205,3 +2210,50 @@ function ordreV11InstitutionalFrame(status){
  note.textContent=archive?'La présence d’une référence dans un index ne vaut pas autorisation de lecture.':'Toute instruction reçue s’applique uniquement dans le cadre de votre habilitation.';
  stage.appendChild(note);
 }
+
+
+/* V1.1.3 — institutional polish for Initié only; no access, mission or save logic changed. */
+function ordreV113Enhance(status){
+ if(!S.serment && S.statut!=='INITIÉ')return;
+ const shellEl=document.querySelector('.shell');if(!shellEl)return;
+ const key=String(status||'');
+ const insertIntro=(heading,detail)=>{
+  const title=shellEl.querySelector('h1.title');if(!title||shellEl.querySelector('.v113-kicker'))return;
+  const strip=document.createElement('div');strip.className='v113-kicker';
+  const a=document.createElement('span');a.textContent=heading;
+  const b=document.createElement('span');b.textContent=detail;
+  strip.append(a,b);title.before(strip);
+ };
+ const appendFooter=(message)=>{
+  if(shellEl.querySelector('.v113-footer'))return;
+  const foot=document.createElement('p');foot.className='v113-footer';foot.textContent=message;
+  const back=shellEl.querySelector('button.back, #ordreV210Back');
+  if(back)back.before(foot);else shellEl.append(foot);
+ };
+ if(/MESSAGERIE/i.test(key)){
+  insertIntro('ORDRE DES CINQ OMBRES // COMMUNICATIONS','CANAL INSTITUTIONNEL');
+  if(/RÉSEAU/i.test(key)){
+   const list=shellEl.querySelector('#ordreV210List');
+   if(list){list.classList.add('v113-transmissions');list.querySelectorAll('button').forEach((button,i)=>{
+    if(button.querySelector('.v113-mail-ref'))return;
+    const ref=document.createElement('span');ref.className='v113-mail-ref';
+    ref.textContent='TRANSMISSION // '+String(i+1).padStart(3,'0');button.append(ref);
+   });}
+   appendFooter('INDEX DES TRANSMISSIONS // LES MESSAGES NON LUS SONT SIGNALÉS DANS LE REGISTRE.');
+  }else if(/LECTURE/i.test(key)){
+   appendFooter('FIN DE TRANSMISSION // CONSULTATION RÉSERVÉE AU DESTINATAIRE.');
+  }
+ }
+ if(/DOSSIER PERSONNEL/i.test(key)){
+  insertIntro('ADMINISTRATION // IDENTITÉ INSTITUTIONNELLE','REGISTRE INDIVIDUEL');
+  const sheet=shellEl.querySelector('.profile-sheet');
+  if(sheet&&!shellEl.querySelector('.v113-identity-note')){
+   const note=document.createElement('p');note.className='v113-identity-note';
+   note.textContent='Les informations ci-dessous constituent la fiche d’identité enregistrée de l’Initié. Les rubriques compartimentées demeurent soumises à habilitation.';
+   sheet.before(note);
+  }
+  appendFooter('DOSSIER 000 // ARCHIVÉ APRÈS ADMISSION — PROFIL D’APTITUDE : DIFFUSION RESTREINTE.');
+ }
+}
+const ordreV113Shell=shell;
+shell=function(...args){ordreV113Shell(...args);ordreV113Enhance(args[1]);};
