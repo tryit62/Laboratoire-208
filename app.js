@@ -19,7 +19,7 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){if((S.serment||S.statut==='INITIÉ')&&typeof ordreV226Shell==='function'){ordreV226Shell(body,status);return;}const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -219,12 +219,34 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
    }
  },5000);
 }
+function ordreV226Grade(){const raw=String(S.reseauGrade||'').trim();return raw&&raw.toUpperCase()!=='CANDIDAT'?raw:((S.serment||S.statut==='INITIÉ')?'OMBRE I':'CANDIDAT')}
+function ordreV226Shell(body,status){
+ applyInitiateTheme();
+ const grade=ordreV211Esc(ordreV226Grade());
+ const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button type="button" class="v226-lock" id="v214LockNow">⌑ VERROUILLER</button>':'';
+ app.innerHTML=`<section class="shell v226-shell"><div class="v226-interior-brand"><img src="order-logo.png" alt=""><span>ORDRE DES CINQ OMBRES <small>RÉSEAU CONFIDENTIEL // ${grade}</small></span></div><div class="v226-interior-content">${body}</div><footer class="v226-interior-footer"><span>RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v226-footer-right">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer></section>`;
+ const b=document.getElementById('v214LockNow');if(b)b.onclick=ordreV226AnimatedLock;
+}
+let ordreV226Locking=false;
+function ordreV226AnimatedLock(){
+ if(ordreV226Locking||ordreLockActive)return;
+ ordreV226Locking=true;
+ // Revoke the local authorization immediately, before the animation begins.
+ const old=ordreAuth;
+ ordreLockActive=true;ordreClearAuth();
+ if(ordreLockTimer){clearInterval(ordreLockTimer);ordreLockTimer=null;}
+ if(old?.access_token){ordreNetFetch('/auth/v1/logout',{method:'POST',token:old.access_token,body:'{}'}).catch(()=>{});}
+ const stages=['FERMETURE DE LA SESSION','CHIFFREMENT DES TRANSMISSIONS','SCELLEMENT DES ARCHIVES','RÉVOCATION DES ACCÈS','VERROUILLAGE DU TERMINAL','TERMINAL SÉCURISÉ'];
+ document.body.classList.add('v226-lock-mode');
+ app.innerHTML=`<section class="v226-lock-screen" role="status" aria-live="polite"><div class="v226-lock-crest">◇</div><div class="v226-lock-kicker">ORDRE DES CINQ OMBRES // PROTOCOLE DE SÉCURITÉ</div><h1>SÉCURISATION DU TERMINAL</h1><div class="v226-lock-stage" id="v226LockStage">${stages[0]}</div><div class="v226-lock-track"><div id="v226LockProgress"></div></div><div class="v226-lock-crypt" aria-hidden="true">7F 0A 4C 91 // ████ // A2 0D 8F</div></section>`;
+ const started=Date.now();const tick=()=>{if(!document.getElementById('v226LockStage'))return;const elapsed=Date.now()-started;const fraction=Math.min(1,elapsed/6000);const index=Math.min(5,Math.floor(fraction*6));document.getElementById('v226LockStage').textContent=stages[index];document.getElementById('v226LockProgress').style.width=(fraction*100)+'%';if(fraction<1){setTimeout(tick,90)}else{document.body.classList.remove('v226-lock-mode','initiated','cinematic-mode','div-eye','div-flame','div-hand','div-spiral','div-hourglass');ordreV226Locking=false;ordreShowLink();}};tick();
+}
 function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
  let entrance='';
  try{const k='OCI_V225_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v225-entrance';}}catch(e){}
- const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
+ const grade=ordreV211Esc(ordreV226Grade());
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
  const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'EN ATTENTE DE DIRECTIVE';
@@ -243,16 +265,16 @@ function initiateHome(){if(!ordreRequireConnection())return;
    </main>
    <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v225-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
  </section>`;
- const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
+ const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
  const mission=S.reseauMission;
  if(mission&&ordreAuth?.matricule===S.matricule){
-  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // OMBRE I');
+  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // '+ordreV226Grade());
   $('#v211MissionCode').textContent=mission.id;$('#v211MissionLabel').textContent=mission.label;return;
  }
- shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
+ shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // '+ordreV226Grade());
 } 
 const INITIATE_MESSAGES=[
  {from:'ADMINISTRATION',subject:'CHANGEMENT DE STATUT',date:'AUJOURD’HUI',preview:'Confirmation de votre nouveau niveau d’accès.',body:()=>`Votre dossier candidat a été clôturé.\n\nVotre statut est désormais INITIÉ.\nAccréditation attribuée : OMBRE I.\n\nLes informations accessibles restent soumises au principe de compartimentation. Toute consultation excédant votre niveau d’autorisation doit être interrompue et signalée.`},
@@ -265,7 +287,8 @@ function initiateMessages(){ordreV210Inbox();return;
  const read=readMailSet(), unread=unreadMailCount();
  shell(`<h1 class="title">MESSAGERIE</h1><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>${unread} NON LU${unread>1?'S':''}</b></div><div class="mail-inbox">${INITIATE_MESSAGES.map((m,i)=>{const from=typeof m.from==='function'?m.from():m.from;const isUnread=!read.has(i);return `<button class="mail-row ${isUnread?'unread-mail':'read-mail'}" onclick="openInitiateMessage(${i})"><span class="mail-status">${isUnread?'●':'○'}</span><span class="mail-from">${from}</span><span class="mail-subject"><b>${m.subject}</b><small>${m.preview}</small></span><span class="mail-date">${m.date}</span></button>`}).join('')}</div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MESSAGERIE // BOÎTE DE RÉCEPTION');
 }
-function openInitiateMessage(i){
+function openInitiateMessage(i){return ordreV226OpenMessage({kind:'builtin',i,from:typeof INITIATE_MESSAGES[i].from==='function'?INITIATE_MESSAGES[i].from():INITIATE_MESSAGES[i].from,subject:INITIATE_MESSAGES[i].subject,date:'DATE NON COMMUNIQUÉE'});
+
  if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];
  if(!S.initieMessagesLus.includes(i)){S.initieMessagesLus.push(i);save()}
  const m=INITIATE_MESSAGES[i],from=typeof m.from==='function'?m.from():m.from,body=m.body();
@@ -370,7 +393,7 @@ function cartoBind(){
 function initiateProfile(){
  shell(`<div class="v225-profile"><header class="v225-profile-head"><small>REGISTRE DES INITIÉS // DOCUMENT CLASSIFIÉ</small><h1>DOSSIER PERSONNEL</h1><p>Identité, habilitation et historique d’admission</p></header>
  <div class="profile-sheet v225-profile-sheet">
- <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>OMBRE I</b></div>
+ <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>${ordreV211Esc(ordreV226Grade())}</b></div>
  <div><span>DIVISION</span><b>${S.affectation}</b></div><div><span>MATRICULE</span><b>${S.matricule}</b></div>
  <div><span>DATE D'INITIATION</span><b>${S.initiationDate||'ENREGISTRÉE'}</b></div>
  </div>
@@ -2045,31 +2068,29 @@ function ordreV210Decorate(){
  if(!bar){bar=document.createElement('button');bar.type='button';bar.id='ordreV210Indicator';bar.className='ordre-v210-indicator';bar.onclick=ordreV210Inbox;document.body.append(bar)}
  bar.hidden=!count;bar.textContent='● NOUVELLE TRANSMISSION // '+count+' NON LU(S)';
 }
+function ordreV226Stamp(m){const d=m.created_at||m.sent_at||m.date||m.timestamp;if(!d)return 'DATE NON COMMUNIQUÉE';const t=new Date(d);return Number.isNaN(t.getTime())?'DATE NON COMMUNIQUÉE':new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(t)}
+function ordreV226ShowInbox(){ordreV210Inbox()}
 function ordreV210Inbox(){
- const msgs=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
- const candidateLegacy=!S.serment&&!!S.messages;
- const builtIn=S.serment?INITIATE_MESSAGES.map((m,i)=>({kind:'builtin',i,subject:m.subject,from:typeof m.from==='function'?m.from():m.from,unread:!readMailSet().has(i)})):(candidateLegacy?[{kind:'candidate',subject:'SUPERVISION — 000',from:'SUPERVISION',unread:true}]:[]);
- const remote=msgs.map(m=>({kind:'remote',msg:m,subject:m.subject,from:'CENTRE DE COMMANDEMENT',unread:!m.read_at}));
- const rows=[...remote,...builtIn];
- shell('<h1 class="title">MESSAGERIE</h1><p class="sub">TRANSMISSIONS INSTITUTIONNELLES ET COMMUNICATIONS DU RÉSEAU</p><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>'+ordreV210UnreadCount()+' NON LU(S)</b></div><div class="ordre-v210-list" id="ordreV210List"></div><button class="btn back" id="ordreV210Back">[ RETOUR ]</button>','MESSAGERIE // RÉSEAU');
- const el=document.getElementById('ordreV210List');
- if(!rows.length)el.textContent='AUCUN MESSAGE.';
- rows.forEach(r=>{const b=document.createElement('button');b.className='btn ordre-v210-mail'+(r.unread?' ordre-v210-unread':'');b.innerHTML='<span class="ordre-v210-dot">'+(r.unread?'●':'○')+'</span><span><strong>'+ordreV210Escape(r.subject)+'</strong><small>'+ordreV210Escape(r.from)+'</small></span>';b.onclick=()=>{if(r.kind==='remote')ordreV210OpenRemote(r.msg);else if(r.kind==='builtin')openInitiateMessage(r.i);else ordreV210OpenCandidate()};el.append(b)});
+ const remote=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
+ const builtIn=S.serment?INITIATE_MESSAGES.map((m,i)=>({kind:'builtin',i,subject:m.subject,from:typeof m.from==='function'?m.from():m.from,unread:!readMailSet().has(i),date:'DATE NON COMMUNIQUÉE'})):(!S.serment&&S.messages?[{kind:'candidate',subject:'SUPERVISION — 000',from:'SUPERVISION',unread:true,date:'DATE NON COMMUNIQUÉE'}]:[]);
+ const rows=[...remote.map(m=>({kind:'remote',msg:m,subject:m.subject,from:m.sender_name||m.sender||'CENTRE DE COMMANDEMENT',unread:!m.read_at,date:ordreV226Stamp(m)})),...builtIn];
+ shell(`<div class="v226-page"><div class="v226-page-kicker">TRANSMISSIONS INSTITUTIONNELLES / CANAL SÉCURISÉ</div><h1>MESSAGERIE</h1><div class="v226-mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>${ordreV210UnreadCount()} NON LU(S)</b></div><div class="v226-inbox" id="ordreV210List"></div><button class="btn v226-back" id="ordreV210Back">← RETOUR AU TABLEAU DE BORD</button></div>`,'MESSAGERIE // RÉSEAU');
+ const el=document.getElementById('ordreV210List');if(!rows.length)el.textContent='AUCUNE TRANSMISSION.';
+ rows.forEach((r,i)=>{const b=document.createElement('button');b.type='button';b.className='v226-mail-row'+(r.unread?' is-unread':'');b.innerHTML=`<span class="v226-mail-mark">${r.unread?'◆':'◇'}</span><span class="v226-mail-data"><span class="v226-mail-from">${ordreV210Escape(r.from)}</span><strong>${ordreV210Escape(r.subject)}</strong><small>${r.kind==='builtin'?ordreV210Escape(INITIATE_MESSAGES[r.i].preview):'TRANSMISSION CONFIDENTIELLE'}</small></span><time>${ordreV210Escape(r.date)}</time><span class="v226-mail-arrow">↗</span>`;b.onclick=()=>ordreV226OpenMessage(r);el.append(b)});
  document.getElementById('ordreV210Back').onclick=()=>S.serment?initiateHome():home();
 }
-function ordreV210OpenCandidate(){S.messages=0;save();shell('<h1 class="title">SUPERVISION — 000</h1><div class="msg"><p>Le matériel déclaré a été enregistré.</p><p>Procédez au Module I.</p><span class="tiny">AUCUNE RÉPONSE REQUISE.</span></div><button class="btn" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>');document.getElementById('ordreV210Back').onclick=ordreV210Inbox}
-async function ordreV210OpenRemote(m){
- shell('<h1 class="title" id="ordreV210Subject"></h1><p class="sub">CENTRE DE COMMANDEMENT // TRANSMISSION INDIVIDUELLE</p><div class="terminal" id="ordreV210Body"></div><button class="btn back" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>','MESSAGERIE // LECTURE');
- document.getElementById('ordreV210Subject').textContent=m.subject;
- document.getElementById('ordreV210Body').textContent=m.body;
- document.getElementById('ordreV210Back').onclick=ordreV210Inbox;
- if(m.read_at)return;
- try{
-  const token=await ordreValidToken();if(!token)return;
-  const confirmed=await ordreNetFetch('/rest/v1/rpc/v210_mark_message_read',{method:'POST',token,body:JSON.stringify({p_message:m.id})});
-  if(confirmed){m.read_at=new Date().toISOString();profileSave();ordreV210Decorate()}
- }catch(e){console.warn('Accusé de lecture différé :',e.message)}
+function ordreV226OpenMessage(r){
+ const esc=ordreV210Escape;
+ const body=r.kind==='remote'?String(r.msg.body||''):r.kind==='builtin'?String(INITIATE_MESSAGES[r.i].body()):'Le matériel déclaré a été enregistré.\nProcédez au Module I.';
+ shell(`<div class="v226-page v226-reader"><div class="v226-page-kicker">TRANSMISSION CHIFFRÉE // CANAL INSTITUTIONNEL</div><div class="v226-decrypt" id="v226Decrypt"><div>◇ DÉCHIFFREMENT DE LA TRANSMISSION</div><div class="v226-decrypt-line"></div></div><article class="v226-message-detail" id="v226MessageDetail" hidden><header><span>TRANSMISSION AUTHENTIFIÉE</span><span>${esc(r.date)}</span></header><h1>${esc(r.subject)}</h1><div class="v226-message-meta"><div><small>EXPÉDITEUR</small><b>${esc(r.from)}</b></div><div><small>DESTINATAIRE</small><b>${esc(S.matricule||'')}</b></div></div><div class="v226-message-body">${esc(body).replace(/\n/g,'<br>')}</div><div class="v226-message-sign">FIN DE TRANSMISSION // ${esc(r.from)}</div></article><button class="btn v226-back" id="v226InboxBack">← BOÎTE DE RÉCEPTION</button></div>`,'MESSAGERIE // LECTURE');
+ document.getElementById('v226InboxBack').onclick=ordreV210Inbox;
+ const show=()=>{const d=document.getElementById('v226Decrypt'),m=document.getElementById('v226MessageDetail');if(d&&m){d.remove();m.hidden=false;m.classList.add('v226-message-reveal')}};
+ setTimeout(show,window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1200);
+ if(r.kind==='remote')ordreV226MarkRemote(r.msg);else if(r.kind==='builtin'){if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];if(!S.initieMessagesLus.includes(r.i)){S.initieMessagesLus.push(r.i);save()}}else{S.messages=0;save()}
 }
+async function ordreV226MarkRemote(m){if(m.read_at)return;try{const token=await ordreValidToken();if(!token)return;const confirmed=await ordreNetFetch('/rest/v1/rpc/v210_mark_message_read',{method:'POST',token,body:JSON.stringify({p_message:m.id})});if(confirmed){m.read_at=new Date().toISOString();profileSave();ordreV210Decorate()}}catch(e){console.warn('Accusé de lecture différé :',e.message)}}
+function ordreV210OpenCandidate(){ordreV226OpenMessage({kind:'candidate',from:'SUPERVISION',subject:'SUPERVISION — 000',date:'DATE NON COMMUNIQUÉE'})}
+function ordreV210OpenRemote(m){ordreV226OpenMessage({kind:'remote',msg:m,subject:m.subject,from:m.sender_name||m.sender||'CENTRE DE COMMANDEMENT',date:ordreV226Stamp(m)})}
 // Preserve V209 poll and refresh; repaint only when message count changes, without rerendering active screens.
 const ordreV210OriginalPoll=ordreV2Poll;
 ordreV2Poll=async function(){
