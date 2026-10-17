@@ -1,5 +1,6 @@
 /* ORDRE TERMINAL V219 — restauration stricte et synchronisation anti-regression */
 const $=s=>document.querySelector(s); const app=$('#app');
+const ordreBetaLabActive=new URLSearchParams(location.search).get('beta-lab')==='1';
 const defaults={matricule:'',statut:'CANDIDAT',accreditation:'0',affectation:'—',inventaire:null,progression:0,messages:1,installed:false,
 eval1:{step:0,factAttempts:0,epistemic:null,controlAttempts:0,decision:null,versions:null,memoryCount:null,cardAnswers:[],sourceObservation:null,complete:false},
 eval2:{step:0,memoryAnswers:[],confidence:[],divergence:null,epistemic:null,versionFirst:null,confidenceMaintained:null,decision:null,sincereFalse:null,authenticFalse:null,complete:false},
@@ -49,7 +50,7 @@ function ordreV229Decorate(status){
  }
  ordreV230LastModule=current;
 }
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);}
+function save(){if(ADMIN_MODE)return;localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);if(ordreBetaLabActive&&ADMIN_MODE)ordreBetaLabAttachReturn();}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -100,11 +101,13 @@ function adminPrepare(divisionName){
   S.affectationReady=true;
 }
 function adminExit(){
+  if(ordreBetaLabActive){window.location.href=window.location.pathname;return;}
   ADMIN_MODE=false;
   document.body.classList.remove('cinematic-mode','initiated','div-eye','div-flame','div-hand','div-spiral','div-hourglass');
   boot();
 }
 function boot(){
+  if(ordreBetaLabActive&&ADMIN_MODE){adminPanel();return;}
   ADMIN_MODE=false;
   document.body.classList.remove('cinematic-mode','initiated','div-eye','div-flame','div-hand','div-spiral','div-hourglass');
   shell(`<div class="boot-screen"><div class="terminal cursor">RÉSEAU DES CINQ OMBRES
@@ -127,11 +130,12 @@ function environment(){if(!ordreRequireConnection())return;if(standalone()){S.in
 function installHelp(){shell(`<h1 class="title">AUTORISATION SYSTÈME REQUISE</h1><div class="terminal">LE TERMINAL NE DISPOSE PAS DES PRIVILÈGES NÉCESSAIRES POUR MODIFIER VOTRE APPAREIL.\n\nOUVREZ LES OPTIONS DE PARTAGE DE VOTRE NAVIGATEUR.\n\nSÉLECTIONNEZ :\n« SUR L'ÉCRAN D'ACCUEIL »\n\nCONSERVEZ LE NOM : TERMINAL\n\nPUIS OUVREZ LE POINT D'ACCÈS NOUVELLEMENT CRÉÉ.</div><div class="menu"><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`,'AUTORISATION EXTERNE');$('#continue').onclick=home}
 
 function adminPanel(){
+  if(!ordreBetaLabActive)return;
   ADMIN_MODE=true;
   document.body.classList.remove('initiated','cinematic-mode','div-eye','div-flame','div-hand','div-spiral','div-hourglass');
   const divisions=['ŒIL FENDU','FLAMME INVERSÉE','MAIN CASSÉE','SPIRALE D’OS','SABLIER NOIR'];
   shell(`<div class="admin-shell">
-    <div class="admin-warning">MODE ADMIN // SIMULATION LOCALE // PROTOTYPE</div>
+    <div class="admin-warning">LABORATOIRE BETA // DONNÉES FICTIVES // AUCUNE SAUVEGARDE JOUEUR</div>
     <h1 class="title">PANNEAU DE CONTRÔLE</h1>
     <div class="terminal">AUCUNE ACTION DE CET ÉCRAN NE DOIT ÊTRE UTILISÉE COMME DOSSIER JOUEUR RÉEL.
 
@@ -153,10 +157,12 @@ SÉLECTIONNEZ UN POINT D'ENTRÉE DANS LA TRAME.</div>
       <label>DIVISION SIMULÉE</label>
       <select id="adminDivision">${divisions.map(x=>`<option${x==='SPIRALE D’OS'?' selected':''}>${x}</option>`).join('')}</select>
     </div>
-    <div class="menu"><button class="btn" id="adminExit">[ QUITTER LE MODE ADMIN ]</button></div>
+    <div class="menu"><button class="btn" id="adminReset">[ REMETTRE LA SIMULATION À ZÉRO ]</button><button class="btn" id="adminExit">[ QUITTER LE LABORATOIRE ]</button></div>
   </div>`,'ADMINISTRATION // LOCAL');
   document.querySelectorAll('.admin-jump').forEach(b=>b.onclick=()=>adminJump(b.dataset.jump,$('#adminDivision').value));
   $('#adminExit').onclick=adminExit;
+  $('#adminReset').onclick=()=>{if(confirm('Réinitialiser uniquement la simulation BETA ?')){adminPrepare($('#adminDivision').value);adminPanel()}};
+  ordreBetaLabAttachReturn();
 }
 function adminJump(step,division){
   adminPrepare(division);
@@ -168,7 +174,7 @@ function adminJump(step,division){
     if(n>=4)S.eval4.complete=true;
     if(n>=5)S.eval5.complete=true;
   };
-  if(step==='start'){ADMIN_MODE=false;boot();return}
+  if(step==='start'){adminPrepare(division);eval1Start();return}
   if(step==='e1'){complete(0);eval1Start();return}
   if(step==='e2'){complete(1);eval2Start();return}
   if(step==='e3'){complete(2);eval3Start();return}
@@ -2053,7 +2059,7 @@ function ordreV2Orders(){
 // Persistent, separate access point; does not rewrite the canonical evaluation/mission story.
 function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.candidate-footer-actions');if(footer){el.className='candidate-footer-inline';el.querySelector('button').className='candidate-footer-action';footer.prepend(el)}else sh.append(el);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
 const ordreV2NativeShell=shell;
-shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton()};
+shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton();if(ordreBetaLabActive&&ADMIN_MODE)ordreBetaLabAttachReturn()};
 
 
 /* V210 BÊTA : boîte unique locale + distant, non-lus et reçu de lecture sécurisé. */
@@ -2168,3 +2174,16 @@ async function ordreV213Read(docId){
 
 // V222: traiter le retour de cérémonie avant le démarrage ordinaire.
 ordreV222ResumeCeremony();
+
+/* V231 — isolated in-memory BETA laboratory. Never commit simulated S to player storage. */
+function ordreBetaLabAttachReturn(){
+ if(!ordreBetaLabActive||!ADMIN_MODE)return;
+ let b=document.getElementById('ordreBetaReturn');
+ if(!b){b=document.createElement('button');b.id='ordreBetaReturn';b.type='button';b.className='ordre-beta-return';document.body.appendChild(b)}
+ b.textContent='⌘ LAB BETA · MENU';b.onclick=adminPanel;
+}
+if(ordreBetaLabActive){
+ document.body.classList.add('ordre-beta-lab');
+ // Delay until the ordinary startup routines have registered; keep simulated state ephemeral.
+ setTimeout(()=>{adminPrepare('SPIRALE D’OS');adminPanel()},1800);
+}

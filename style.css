@@ -1184,3 +1184,8 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 
 /* V230: module progress represents completed evaluations, never inferred from the current screen. */
 .v229-track{position:relative}
+
+/* V231 — BETA lab controls (separate from player UI). */
+.ordre-beta-lab .candidate-status::after{content:' · SIMULATION BETA';color:#d1b46d;font-size:.68rem;letter-spacing:.08em}
+.ordre-beta-return{position:fixed;z-index:99999;right:14px;bottom:72px;padding:11px 14px;border:1px solid #b69a55;background:#11120f;color:#ead49b;font:700 11px Courier New,monospace;letter-spacing:.06em;box-shadow:0 5px 20px #0009;cursor:pointer}
+.ordre-beta-lab .admin-warning{color:#e8c57c;border:1px solid #816f4d;padding:12px;margin:12px 0;line-height:1.5}
