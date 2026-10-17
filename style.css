@@ -1189,3 +1189,9 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 .ordre-beta-lab .candidate-status::after{content:' · SIMULATION BETA';color:#d1b46d;font-size:.68rem;letter-spacing:.08em}
 .ordre-beta-return{position:fixed;z-index:99999;right:14px;bottom:72px;padding:11px 14px;border:1px solid #b69a55;background:#11120f;color:#ead49b;font:700 11px Courier New,monospace;letter-spacing:.06em;box-shadow:0 5px 20px #0009;cursor:pointer}
 .ordre-beta-lab .admin-warning{color:#e8c57c;border:1px solid #816f4d;padding:12px;margin:12px 0;line-height:1.5}
+
+/* V1.1: institutional framing; no change to division colors or emblems. */
+.v11-authority-strip{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:9px 0 11px;margin:0 0 19px;border-bottom:1px solid rgba(188,164,112,.32);color:#bba477;font:11px Courier New,monospace;letter-spacing:.09em}
+.v11-authority-strip span:last-child{opacity:.73}
+.v11-authority-note{margin:22px 0 6px;padding-top:10px;border-top:1px solid rgba(188,164,112,.19);color:#a99a7c;font:11px/1.6 Courier New,monospace;letter-spacing:.025em}
+@media(max-width:600px){.v11-authority-strip{font-size:10px;letter-spacing:.04em}}

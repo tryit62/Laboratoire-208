@@ -50,7 +50,7 @@ function ordreV229Decorate(status){
  }
  ordreV230LastModule=current;
 }
-function save(){if(ADMIN_MODE)return;localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);if(ordreBetaLabActive&&ADMIN_MODE)ordreBetaLabAttachReturn();}
+function save(){if(ADMIN_MODE)return;localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);ordreV11InstitutionalFrame(status);if(ordreBetaLabActive&&ADMIN_MODE)ordreBetaLabAttachReturn();}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -2188,4 +2188,19 @@ if(ordreBetaLabActive){
  document.body.classList.add('ordre-beta-lab');
  // Delay until the ordinary startup routines have registered; keep simulated state ephemeral.
  setTimeout(()=>{adminPrepare('SPIRALE D’OS');adminPanel()},1800);
+}
+
+/* V1.1: visual context only; authorization remains server-enforced. */
+function ordreV11InstitutionalFrame(status){
+ const stage=document.querySelector('.candidate-stage');if(!stage)return;
+ const archive=/ARCHIVES|CONSULTATION|DOCUMENTAIRE/i.test(status);
+ const supervision=/SUPERVISION/i.test(status);
+ if(!archive&&!supervision)return;
+ const frame=document.createElement('div');frame.className='v11-authority-strip';
+ const a=document.createElement('span');a.textContent=archive?'ORDRE // CONSULTATION DOCUMENTAIRE':'ORDRE // CANAL SUPERVISION';
+ const b=document.createElement('span');b.textContent=archive?'DIFFUSION SOUS CONTRÔLE':'TRANSMISSION INTERNE';
+ frame.append(a,b);stage.insertBefore(frame,stage.firstChild);
+ const note=document.createElement('p');note.className='v11-authority-note';
+ note.textContent=archive?'La présence d’une référence dans un index ne vaut pas autorisation de lecture.':'Toute instruction reçue s’applique uniquement dans le cadre de votre habilitation.';
+ stage.appendChild(note);
 }
