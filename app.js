@@ -224,8 +224,8 @@ function ordreV226Shell(body,status){
  applyInitiateTheme();
  const grade=ordreV211Esc(ordreV226Grade());
  const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button type="button" class="v226-lock" id="v214LockNow">⌑ VERROUILLER</button>':'';
- app.innerHTML=`<section class="shell v226-shell"><div class="v226-interior-brand"><img src="order-logo.png" alt=""><span>ORDRE DES CINQ OMBRES <small>RÉSEAU CONFIDENTIEL // ${grade}</small></span></div><div class="v226-interior-content">${body}</div><footer class="v226-interior-footer"><span>RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v226-footer-right">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer></section>`;
- const b=document.getElementById('v214LockNow');if(b)b.onclick=ordreV226AnimatedLock;
+ app.innerHTML=`<section class="shell v226-shell"><div class="v226-interior-brand"><img src="order-logo.png" alt=""><span>ORDRE DES CINQ OMBRES <small>RÉSEAU CONFIDENTIEL // ${grade}</small></span></div><div class="v226-interior-content">${body}</div><footer class="v226-interior-footer"><span>RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button type="button" class="v227-bell" aria-label="Centre de notifications" onclick="ordreV227Panel()">♢ <span id="v227InteriorCount" class="v227-bubble" hidden></span></button>${lock}</footer></section>`;
+ const b=document.getElementById('v214LockNow');if(b)b.onclick=ordreV226AnimatedLock;queueMicrotask(ordreV227Decorate);
 }
 let ordreV226Locking=false;
 function ordreV226AnimatedLock(){
@@ -263,12 +263,13 @@ function initiateHome(){if(!ordreRequireConnection())return;
       <button onclick="initiateProfile()"><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
     </nav></div>
    </main>
-   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v225-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
+   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button type="button" class="v227-bell" aria-label="Centre de notifications" onclick="ordreV227Panel()">♢ <span id="v227HomeCount" class="v227-bubble" hidden></span></button>${lock}</footer>
  </section>`;
- const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;
+ const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;ordreV227Decorate();
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
+ if(S.reseauMission?.id)ordreV227Seen('mission:'+S.reseauMission.id);
  const mission=S.reseauMission;
  if(mission&&ordreAuth?.matricule===S.matricule){
   shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // '+ordreV226Grade());
@@ -2045,7 +2046,7 @@ function ordreV2Orders(){
  $('#v2Back').onclick=()=>S.serment?initiateHome():home();
 }
 // Persistent, separate access point; does not rewrite the canonical evaluation/mission story.
-function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
+function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE||(S.serment||S.statut==='INITIÉ'))return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
 const ordreV2NativeShell=shell;
 shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton()};
 
@@ -2084,7 +2085,7 @@ function ordreV226OpenMessage(r){
  const body=r.kind==='remote'?String(r.msg.body||''):r.kind==='builtin'?String(INITIATE_MESSAGES[r.i].body()):'Le matériel déclaré a été enregistré.\nProcédez au Module I.';
  shell(`<div class="v226-page v226-reader"><div class="v226-page-kicker">TRANSMISSION CHIFFRÉE // CANAL INSTITUTIONNEL</div><div class="v226-decrypt" id="v226Decrypt"><div>◇ DÉCHIFFREMENT DE LA TRANSMISSION</div><div class="v226-decrypt-line"></div></div><article class="v226-message-detail" id="v226MessageDetail" hidden><header><span>TRANSMISSION AUTHENTIFIÉE</span><span>${esc(r.date)}</span></header><h1>${esc(r.subject)}</h1><div class="v226-message-meta"><div><small>EXPÉDITEUR</small><b>${esc(r.from)}</b></div><div><small>DESTINATAIRE</small><b>${esc(S.matricule||'')}</b></div></div><div class="v226-message-body">${esc(body).replace(/\n/g,'<br>')}</div><div class="v226-message-sign">FIN DE TRANSMISSION // ${esc(r.from)}</div></article><button class="btn v226-back" id="v226InboxBack">← BOÎTE DE RÉCEPTION</button></div>`,'MESSAGERIE // LECTURE');
  document.getElementById('v226InboxBack').onclick=ordreV210Inbox;
- const show=()=>{const d=document.getElementById('v226Decrypt'),m=document.getElementById('v226MessageDetail');if(d&&m){d.remove();m.hidden=false;m.classList.add('v226-message-reveal')}};
+ const show=()=>{ordreV227Decorate();const d=document.getElementById('v226Decrypt'),m=document.getElementById('v226MessageDetail');if(d&&m){d.remove();m.hidden=false;m.classList.add('v226-message-reveal')}};
  setTimeout(show,window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1200);
  if(r.kind==='remote')ordreV226MarkRemote(r.msg);else if(r.kind==='builtin'){if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];if(!S.initieMessagesLus.includes(r.i)){S.initieMessagesLus.push(r.i);save()}}else{S.messages=0;save()}
 }
@@ -2133,7 +2134,7 @@ async function ordreV213List(){
  el.textContent='CHARGEMENT DES AUTORISATIONS...';
  try{
   const data=await ordreV213Rpc('v213_archive_index',{});
-  ordreV213Catalogue=Array.isArray(data)?data:[];
+  ordreV213Catalogue=Array.isArray(data)?data:[];ordreV227Decorate();
   el.replaceChildren();
   if(!ordreV213Catalogue.length){el.textContent='AUCUNE ARCHIVE SUPPLÉMENTAIRE PUBLIÉE POUR VOTRE ACCRÉDITATION.';return}
   for(const doc of ordreV213Catalogue){
@@ -2154,9 +2155,43 @@ async function ordreV213Read(docId){
   if(!d){out.textContent='ACCÈS REFUSÉ OU DOCUMENT RETIRÉ.';return}
   out.replaceChildren();const h=document.createElement('h2');h.textContent=d.doc_id+' // '+d.title;
   const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';pre.style.overflowWrap='anywhere';pre.textContent=d.body;
-  out.append(h,pre);
+  out.append(h,pre);ordreV227Seen('archive:'+docId);ordreV227Decorate();
  }catch(e){out.textContent='LECTURE REFUSÉE : '+e.message}
 }
+
+
+/* V227 BÊTA — notifications issues exclusivement des données effectivement accessibles.
+   La lecture des messages reste pilotée par la RPC V210, sans écriture d'autorisation. */
+function ordreV227Key(){return 'OCI_V227_SEEN_'+String(ordreAuth?.player_id||S.matricule||'anonymous')}
+function ordreV227SeenSet(){try{return new Set(JSON.parse(localStorage.getItem(ordreV227Key())||'[]'))}catch(e){return new Set()}}
+function ordreV227Seen(key){const set=ordreV227SeenSet();set.add(key);try{localStorage.setItem(ordreV227Key(),JSON.stringify([...set]))}catch(e){}}
+function ordreV227Items(){
+ if(!S.serment||!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)return [];
+ const seen=ordreV227SeenSet(),items=[];
+ const unread=ordreV210UnreadCount();
+ if(unread)items.push({type:'mail',title:'TRANSMISSIONS NON LUES',subtitle:unread+' message(s) à consulter',count:unread});
+ if(S.reseauMission?.id&&!seen.has('mission:'+S.reseauMission.id))items.push({type:'mission',title:'NOUVELLE AFFECTATION',subtitle:String(S.reseauMission.id),count:1});
+ const archives=ordreV213Catalogue.filter(d=>d?.doc_id&&!seen.has('archive:'+d.doc_id));
+ if(archives.length)items.push({type:'archive',title:'ARCHIVES À CONSULTER',subtitle:archives.length+' document(s) publiés',count:archives.length});
+ return items;
+}
+function ordreV227Decorate(){
+ const items=ordreV227Items(),total=items.reduce((n,i)=>n+i.count,0);
+ document.querySelectorAll('.v227-bubble').forEach(el=>{el.hidden=!total;el.textContent=total>99?'99+':String(total)});
+ const cards=document.querySelectorAll('.v225-grid button');
+ const lookup={mission:0,mail:1,archive:2};
+ cards.forEach(card=>card.querySelectorAll('.v227-card-bubble').forEach(x=>x.remove()));
+ items.forEach(i=>{const card=cards[lookup[i.type]];if(!card)return;const badge=document.createElement('span');badge.className='v227-card-bubble';badge.textContent=i.count>99?'99+':String(i.count);card.append(badge)});
+}
+function ordreV227Panel(){
+ const items=ordreV227Items();
+ const esc=ordreV210Escape;
+ const rows=items.length?items.map((item,i)=>`<button class="v227-notification" type="button" data-v227="${i}"><span class="v227-notification-symbol">${item.type==='mail'?'✉':item.type==='archive'?'▤':'◇'}</span><span><strong>${esc(item.title)}</strong><small>${esc(item.subtitle)}</small></span><b class="v227-bubble">${item.count}</b></button>`).join(''):'<p class="v227-empty">AUCUNE NOUVELLE NOTIFICATION.</p>';
+ shell(`<div class="v226-page v227-center"><div class="v226-page-kicker">RÉSEAU DES OMBRES // ACTIVITÉ</div><h1>CENTRE DE NOTIFICATIONS</h1><p class="v227-intro">Transmissions et éléments publiés pour votre accréditation.</p><div class="v227-notifications">${rows}</div><button class="btn v226-back" onclick="initiateHome()">← RETOUR AU TABLEAU DE BORD</button></div>`,'RÉSEAU // NOTIFICATIONS');
+ document.querySelectorAll('[data-v227]').forEach(b=>b.onclick=()=>{const item=items[Number(b.dataset.v227)];if(!item)return;if(item.type==='mail')initiateMessages();else if(item.type==='mission')initiateMissions();else initiateArchives()});
+}
+const ordreV227PreviousDecorate=ordreV210Decorate;
+ordreV210Decorate=function(){ordreV227PreviousDecorate();ordreV227Decorate()};
 
 // V222: traiter le retour de cérémonie avant le démarrage ordinaire.
 ordreV222ResumeCeremony();
