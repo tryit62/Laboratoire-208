@@ -139,8 +139,20 @@ function identify(){
  ordreShowLink();
 }
 function standalone(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
-function environment(){if(!ordreRequireConnection())return;if(standalone()){S.installed=true;save();shell(`<div class="terminal">POINT D'ACCÈS DÉTECTÉ.\n\nAPPAREIL ENREGISTRÉ.\nCANAL CANDIDAT ÉTABLI.\n\nPROTOCOLE 000 AUTORISÉ.</div>`,'POINT D’ACCÈS ACTIF');later(home,1100)}else{shell(`<h1 class="title">ENVIRONNEMENT NON PERSISTANT</h1><p class="sub">Installation d'un point d'accès local recommandée. Cette opération permet les connexions ultérieures depuis votre appareil.</p><div class="menu"><button class="btn primary" id="install">[ ÉTABLIR LE POINT D'ACCÈS ]</button><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`);$('#install').onclick=installHelp;$('#continue').onclick=home}}
-function installHelp(){shell(`<h1 class="title">AUTORISATION SYSTÈME REQUISE</h1><div class="terminal">LE TERMINAL NE DISPOSE PAS DES PRIVILÈGES NÉCESSAIRES POUR MODIFIER VOTRE APPAREIL.\n\nOUVREZ LES OPTIONS DE PARTAGE DE VOTRE NAVIGATEUR.\n\nSÉLECTIONNEZ :\n« SUR L'ÉCRAN D'ACCUEIL »\n\nCONSERVEZ LE NOM : TERMINAL\n\nPUIS OUVREZ LE POINT D'ACCÈS NOUVELLEMENT CRÉÉ.</div><div class="menu"><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`,'AUTORISATION EXTERNE');$('#continue').onclick=home}
+function environment(){if(!ordreRequireConnection())return;if(standalone()){S.installed=true;save();shell(`<div class="terminal">POINT D'ACCÈS DÉTECTÉ.\n\nAPPAREIL ENREGISTRÉ.\nCANAL CANDIDAT ÉTABLI.\n\nPROTOCOLE 000 AUTORISÉ.</div>`,'POINT D’ACCÈS ACTIF');later(home,1100)}else{shell(`<h1 class="title">ENVIRONNEMENT NON PERSISTANT</h1><p class="sub">Installation d'un point d'accès local recommandée. Cette opération permet les connexions ultérieures depuis votre appareil.</p><div class="menu"><button class="btn primary" id="install">[ ÉTABLIR LE POINT D'ACCÈS ]</button><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`);$('#install').onclick=installHelp;$('#continue').onclick=ordreContinueSession}}
+async function ordreContinueSession(){
+ const btn=document.getElementById('continue');
+ if(btn){btn.disabled=true;btn.textContent='[ VÉRIFICATION DE SESSION… ]';}
+ try{
+  const token=await ordreValidToken();
+  if(!token){ordreShowLink();return;}
+  home();
+ }catch(err){
+  console.warn('Reprise de session impossible :',err);
+  ordreShowLink();
+ }
+}
+function installHelp(){shell(`<h1 class="title">AUTORISATION SYSTÈME REQUISE</h1><div class="terminal">LE TERMINAL NE DISPOSE PAS DES PRIVILÈGES NÉCESSAIRES POUR MODIFIER VOTRE APPAREIL.\n\nOUVREZ LES OPTIONS DE PARTAGE DE VOTRE NAVIGATEUR.\n\nSÉLECTIONNEZ :\n« SUR L'ÉCRAN D'ACCUEIL »\n\nCONSERVEZ LE NOM : TERMINAL\n\nPUIS OUVREZ LE POINT D'ACCÈS NOUVELLEMENT CRÉÉ.</div><div class="menu"><button class="btn" id="continue">[ POURSUIVRE CETTE SESSION ]</button></div>`,'AUTORISATION EXTERNE');$('#continue').onclick=ordreContinueSession}
 
 function adminPanel(){
   if(!ordreBetaLabActive)return;
@@ -292,7 +304,7 @@ function initiateHome(){if(!ordreRequireConnection())return;
       <button onclick="initiateProfile()"><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
     </nav></div>
    </main>
-   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v225-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
+   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span>${lock}</footer>
  </section>`;
  const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;
 }
@@ -2261,11 +2273,11 @@ shell=function(...args){ordreV113Shell(...args);ordreV113Enhance(args[1]);};
 
 /* V1.1.5 — restrained live states; purely presentational, no new privileges or lore. */
 function ordreV115HomeSignals(){
- const screen=document.querySelector('.v224-screen');if(!screen)return;
+ const screen=document.querySelector('.v225-screen, .v224-screen');if(!screen)return;
  const count=ordreV210UnreadCount();
  const mail=screen.querySelector('button[onclick="initiateMessages()"]');
  if(mail){mail.classList.toggle('v115-pending',count>0);mail.setAttribute('aria-label','Messagerie, '+count+' transmission(s) non lue(s)');
-  const desc=mail.querySelector('.v224-card-desc');if(desc)desc.textContent=count?count+' TRANSMISSION(S) NON LUE(S)':'AUCUNE TRANSMISSION NON LUE';}
+  const desc=mail.querySelector('.v225-card-desc, .v224-card-desc');if(desc)desc.textContent=count?count+' NON LU(S)':'AUCUNE TRANSMISSION NON LUE';}
  const missions=screen.querySelector('button[onclick="initiateMissions()"]');
  if(missions){const assigned=!!(S.reseauMission&&ordreAuth?.matricule===S.matricule);missions.classList.toggle('v115-assigned',assigned);}
  const directives=screen.querySelector('.v224-directives');if(directives)directives.textContent='TRANSMISSIONS NON LUES : '+count;
