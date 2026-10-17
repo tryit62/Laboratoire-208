@@ -19,7 +19,7 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER LE TERMINAL ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -223,25 +223,25 @@ function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
  let entrance='';
- try{const k='OCI_V224_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v224-entrance';}}catch(e){}
+ try{const k='OCI_V225_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v225-entrance';}}catch(e){}
  const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
- const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
- const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v224-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
- app.innerHTML=`<section class="v224-screen${entrance}" aria-label="Accueil Initié">
-   <header class="v224-header"><div class="v224-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v224-brand-name">ORDRE DES CINQ OMBRES</span><span class="v224-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v224-clearance">ACCÈS ${grade}</span></header>
-   <main class="v224-main">
-    <section class="v224-identity"><div class="v224-identity-copy"><span class="v224-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v224-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div><div class="v224-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div></section>
-    <section class="v224-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
-    <nav class="v224-grid" aria-label="Espaces réservés aux Initiés">
-      <button onclick="initiateMissions()"><span class="v224-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v224-card-name">MISSIONS</span><span class="v224-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v224-card-arrow">↗</span></button>
-      <button onclick="initiateMessages()"><span class="v224-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v224-card-name">MESSAGERIE</span><span class="v224-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v224-card-arrow">↗</span></button>
-      <button onclick="initiateArchives()"><span class="v224-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v224-card-name">ARCHIVES</span><span class="v224-card-desc">ACCÈS ${grade}</span><span class="v224-card-arrow">↗</span></button>
-      <button onclick="initiateProfile()"><span class="v224-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v224-card-name">DOSSIER PERSONNEL</span><span class="v224-card-desc">D000 // CLÔTURÉ</span><span class="v224-card-arrow">↗</span></button>
-    </nav>
+ const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'EN ATTENTE DE DIRECTIVE';
+ const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v225-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
+ app.innerHTML=`<section class="v225-screen${entrance}" aria-label="Accueil Initié">
+   <header class="v225-header"><div class="v225-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v225-brand-name">ORDRE DES CINQ OMBRES</span><span class="v225-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v225-clearance">ACCÈS ${grade}</span></header>
+   <main class="v225-main"><aside class="v225-seal"><div class="v225-seal-title">SCEAU DE DIVISION</div><div class="v225-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div><div class="v225-seal-name">${division}</div><div class="v225-seal-bottom">IDENTITÉ RECONNUE ◆</div></aside><div class="v225-content">
+    <section class="v225-identity"><div class="v225-identity-copy"><span class="v225-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v225-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div></section>
+    <section class="v225-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
+    <nav class="v225-grid" aria-label="Espaces réservés aux Initiés">
+      <button onclick="initiateMissions()"><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'EN ATTENTE DE DIRECTIVE'}</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateMessages()"><span class="v225-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v225-card-name">MESSAGERIE</span><span class="v225-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateArchives()"><span class="v225-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v225-card-name">ARCHIVES</span><span class="v225-card-desc">ACCÈS ${grade}</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateProfile()"><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
+    </nav></div>
    </main>
-   <footer class="v224-footer"><span class="v224-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v224-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
+   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v225-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
  </section>`;
  const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
 }
@@ -368,17 +368,17 @@ function cartoBind(){
 }
 
 function initiateProfile(){
- shell(`<h1 class="title">DOSSIER PERSONNEL</h1>
- <div class="profile-sheet">
+ shell(`<div class="v225-profile"><header class="v225-profile-head"><small>REGISTRE DES INITIÉS // DOCUMENT CLASSIFIÉ</small><h1>DOSSIER PERSONNEL</h1><p>Identité, habilitation et historique d’admission</p></header>
+ <div class="profile-sheet v225-profile-sheet">
  <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>OMBRE I</b></div>
  <div><span>DIVISION</span><b>${S.affectation}</b></div><div><span>MATRICULE</span><b>${S.matricule}</b></div>
  <div><span>DATE D'INITIATION</span><b>${S.initiationDate||'ENREGISTRÉE'}</b></div>
  </div>
- <div class="classified-block"><div class="eyebrow">RECRUTEMENT</div><h2>DOSSIER 000 // CLÔTURÉ</h2>
+ <div class="classified-block v225-profile-history"><div class="eyebrow">RECRUTEMENT</div><h2>DOSSIER 000 // CLÔTURÉ</h2>
  <p>ÉVALUATION I — VALIDÉE<br>ÉVALUATION II — VALIDÉE<br>ÉVALUATION III — VALIDÉE<br>ÉVALUATION IV — VALIDÉE<br>ÉVALUATION V — VALIDÉE</p></div>
  <div class="profile-restricted"><b>PROFIL D'APTITUDE</b><span>[ACCÈS RESTREINT]</span></div>
  <div class="profile-restricted"><b>MOTIF D'AFFECTATION</b><span>[ACCÈS OMBRE II REQUIS]</span></div>
- <button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'DOSSIER PERSONNEL // INITIÉ');
+ <button class="btn" onclick="initBack()">← RETOUR AU TABLEAU DE BORD</button></div>`,'DOSSIER PERSONNEL // INITIÉ');
 }
 function home(){if(!ordreRequireConnection())return;
   if(S.serment||S.statut==='INITIÉ'){ if(!S.initieAccueilVu){initiateFirstEntry();return} initiateHome();return }
