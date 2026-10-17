@@ -19,22 +19,35 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-/* V229 — presentation only: never mutates game state */
-let ordreV229LastModule=null;
+/* V230 — visual-only module tracking; no changes to player answers or progression. */
+let ordreV230LastModule=null;
 function ordreV229Decorate(status){
  const stage=document.querySelector('.candidate-stage');if(!stage)return;
- const match=String(status).match(/MODULE\s+(I|II|III|IV|V)\b/i);
+ const moduleHeading=stage.querySelector('.module-head .module-code');
+ const match=moduleHeading?.textContent?.match(/ÉVALUATION\s+(I|II|III|IV|V)\b/i);
  const current=match?match[1]:null;
- if(!current){ordreV229LastModule=null;return}
+ const label=document.querySelector('.candidate-status');
+ if(label)label.setAttribute('aria-label','Statut du terminal : '+status);
+ // Keep last module while visiting the home screen, but do not display progress there.
+ if(!current)return;
  const numbers={I:1,II:2,III:3,IV:4,V:5};
- const completed=/ENREGISTRÉ|TERMINÉ|ACHEVÉ/i.test(status);
+ const completedCount=[S.eval1,S.eval2,S.eval3,S.eval4,S.eval5].filter(x=>x?.complete===true).length;
+ const completed=S['eval'+numbers[current]]?.complete===true;
  const progress=document.createElement('div');progress.className='v229-progress';progress.setAttribute('role','status');
- progress.innerHTML='<span>ÉVALUATION '+current+' / V</span><span>'+(completed?'DOSSIER CONSIGNÉ':'SESSION EN COURS')+'</span>';
- stage.insertBefore(progress,stage.firstChild);
- const track=document.createElement('div');track.className='v229-track';track.setAttribute('aria-label','Module '+numbers[current]+' sur 5');track.innerHTML='<span style="width:'+(numbers[current]/5*100)+'%"></span>';progress.after(track);
- if(completed){const closure=document.createElement('div');closure.className='v229-closure';closure.textContent='ÉVALUATION '+current+' TERMINÉE — RÉSULTATS CONSIGNÉS';track.after(closure)}
- if(ordreV229LastModule!==null&&ordreV229LastModule!==current){const transition=document.createElement('div');transition.className='v229-transition';transition.setAttribute('role','status');transition.textContent='MODULE '+current+' // ACCÈS AUTORISÉ';track.after(transition);setTimeout(()=>transition.remove(),900)}
- ordreV229LastModule=current;
+ const left=document.createElement('span');left.textContent='ÉVALUATION '+current+' / V';
+ const right=document.createElement('span');right.textContent=completed?'DOSSIER CONSIGNÉ':'SESSION EN COURS';
+ progress.append(left,right);stage.insertBefore(progress,stage.firstChild);
+ const track=document.createElement('div');track.className='v229-track';
+ track.setAttribute('role','progressbar');track.setAttribute('aria-valuemin','0');track.setAttribute('aria-valuemax','5');track.setAttribute('aria-valuenow',String(completedCount));track.setAttribute('aria-label','Évaluations terminées : '+completedCount+' sur 5');
+ const bar=document.createElement('span');bar.style.width=(completedCount*20)+'%';track.appendChild(bar);progress.after(track);
+ if(completed&&/ENREGISTRÉ|TERMINÉ|ACHEVÉ/i.test(status)){
+  const closure=document.createElement('div');closure.className='v229-closure';closure.textContent='ÉVALUATION '+current+' TERMINÉE — RÉSULTATS CONSIGNÉS';track.after(closure);
+ }
+ if(ordreV230LastModule!==null&&ordreV230LastModule!==current){
+  const transition=document.createElement('div');transition.className='v229-transition';transition.setAttribute('role','status');transition.textContent='MODULE '+current+' // ACCÈS AUTORISÉ';track.after(transition);
+  setTimeout(()=>{if(transition.isConnected)transition.remove()},900);
+ }
+ ordreV230LastModule=current;
 }
 function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);}
 function later(fn,ms=650){setTimeout(fn,ms)}
@@ -550,7 +563,7 @@ function eval1CardQuestion(i){
     ordreCandidateCardTransition(i+1);
   });
 }
-function ordreCandidateCardTransition(nextIndex){const host=document.querySelector('.shell');if(!host){eval1CardQuestion(nextIndex);return}const notice=document.createElement('div');notice.className='candidate-card-confirmation';notice.setAttribute('role','status');notice.textContent='DÉCISION CONSIGNÉE // CARTE '+String(nextIndex).padStart(2,'0')+' / 06';host.appendChild(notice);host.querySelectorAll('.card-judgement').forEach(b=>b.disabled=true);setTimeout(()=>eval1CardQuestion(nextIndex),560)}
+function ordreCandidateCardTransition(nextCardIndex){const host=document.querySelector('.shell');if(!host){eval1CardQuestion(nextCardIndex);return}const notice=document.createElement('div');notice.className='candidate-card-confirmation';notice.setAttribute('role','status');notice.textContent='DÉCISION CONSIGNÉE // CARTE '+String(nextCardIndex).padStart(2,'0')+' / 06';host.appendChild(notice);host.querySelectorAll('.card-judgement').forEach(b=>b.disabled=true);setTimeout(()=>eval1CardQuestion(nextCardIndex),560)}
 function eval1Confrontation(){
   S.eval1.step=9;save();
   const labels={ETABLI:'ÉTABLI',NON_ETABLI:'NON ÉTABLI',INCERTAIN:'INCERTAIN'};

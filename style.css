@@ -1181,3 +1181,6 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 .candidate-stage .sub{margin-bottom:12px}
 .candidate-stage .terminal{max-width:100%;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.v229-track>span{transition:none}.v229-transition{animation:none}}
+
+/* V230: module progress represents completed evaluations, never inferred from the current screen. */
+.v229-track{position:relative}
