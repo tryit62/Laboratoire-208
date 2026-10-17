@@ -188,12 +188,13 @@ function adminJump(step,division){
   if(step==='oath'){assignmentOathAuthorize();return}
   if(step==='cine'){
     S.serment=true;S.statut='INITIÉ';S.accreditation='OMBRE I';
-    initiateCinematic();return
+    shell(`<h1 class="title">CÉRÉMONIE // SIMULATION</h1><div class="terminal">LE SERMENT A ÉTÉ VALIDÉ DANS LE LABORATOIRE.\n\nLA CÉRÉMONIE EXTERNE N’EST PAS LANCÉE POUR ÉVITER TOUTE INTERACTION AVEC UNE SESSION RÉELLE.\n\nDIVISION : ${S.affectation}\nACCRÉDITATION : OMBRE I</div><div class="menu"><button class="btn primary" id="labEnterInitiate">[ OUVRIR LE TERMINAL INITIÉ ]</button></div>`,'LAB BETA // CÉRÉMONIE');
+    document.getElementById('labEnterInitiate').onclick=()=>{S.initieAccueilVu=false;initiateFirstEntry()};return
   }
   if(step==='initiate'){
     S.serment=true;S.statut='INITIÉ';S.accreditation='OMBRE I';S.initieAccueilVu=true;
     document.body.classList.add('initiated');
-    home();return
+    initiateHome();return
   }
 }
 
@@ -1641,6 +1642,7 @@ function ordreScheduleLock(){
 // When opening the application again, no authenticated session survives.
 window.addEventListener('pagehide',()=>{ordreClearAuth();ordreLockActive=true});
 function ordreRequireConnection(){
+ if(ordreBetaLabActive&&ADMIN_MODE)return true;
  if(ordreLockActive||!ordreAuth?.access_token){ordreShowLink();return false;}
  return true;
 }
