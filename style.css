@@ -1170,3 +1170,14 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 .candidate-status{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.candidate-footer-actions{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}.candidate-footer-action{font:inherit;font-size:clamp(10px,1.8vw,12px);color:inherit;background:transparent;border:1px solid currentColor;border-radius:3px;padding:5px 9px;cursor:pointer;opacity:.8}.candidate-footer-inline{display:inline-flex}.candidate-footer-action:hover{opacity:1}
 .candidate-transmission{border:1px solid rgba(181,154,103,.45);padding:clamp(18px,4vw,32px);background:rgba(12,12,10,.7);color:#e7ddc9}.candidate-transmission p{line-height:1.75;font-size:clamp(15px,2.1vw,19px)}.candidate-transmission .candidate-kicker,.candidate-transmission .tiny{font-size:11px;letter-spacing:.1em;color:#bba477}.candidate-transmission .candidate-emphasis{color:#d9bd84;font-weight:600}.candidate-card-confirmation{margin-top:14px;padding:12px;border:1px solid rgba(181,154,103,.6);text-align:center;letter-spacing:.1em;font-size:13px;color:#d9bd84;animation:candidate-enter .2s ease-out}.card-judgement:disabled{opacity:.55;pointer-events:none}
 .shell .title{font-size:clamp(26px,4.3vw,42px);line-height:1.2}.shell .sub{font-size:clamp(15px,2.3vw,20px);line-height:1.45}.shell .terminal{font-size:clamp(15px,2.15vw,19px);line-height:1.7}.shell .menu .btn{font-size:clamp(14px,2vw,18px)}@media(max-width:600px){.candidate-footer-actions{width:100%;justify-content:flex-end}.candidate-transmission{padding:16px}}@media(prefers-reduced-motion:reduce){.candidate-stage,.candidate-card-confirmation{animation:none}}
+
+/* V229 — nonblocking progress and ceremonial confirmations */
+.v229-progress{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 7px;color:#bba477;font-size:clamp(10px,1.6vw,12px);letter-spacing:.12em}
+.v229-track{height:2px;background:rgba(188,164,112,.16);margin-bottom:18px;overflow:hidden}
+.v229-track>span{display:block;height:100%;background:#bba477;opacity:.72;transition:width .35s ease}
+.v229-closure,.v229-transition{border:1px solid rgba(188,164,112,.4);padding:12px 15px;margin:14px 0;color:#dbc395;text-align:center;font-size:clamp(12px,1.9vw,15px);letter-spacing:.08em}
+.v229-transition{animation:v229-arrive .8s ease-out both}
+@keyframes v229-arrive{0%{opacity:0;transform:translateY(-5px)}25%{opacity:1}100%{opacity:0;transform:none}}
+.candidate-stage .sub{margin-bottom:12px}
+.candidate-stage .terminal{max-width:100%;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:reduce){.v229-track>span{transition:none}.v229-transition{animation:none}}

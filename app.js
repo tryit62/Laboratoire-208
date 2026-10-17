@@ -19,7 +19,24 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
+/* V229 — presentation only: never mutates game state */
+let ordreV229LastModule=null;
+function ordreV229Decorate(status){
+ const stage=document.querySelector('.candidate-stage');if(!stage)return;
+ const match=String(status).match(/MODULE\s+(I|II|III|IV|V)\b/i);
+ const current=match?match[1]:null;
+ if(!current){ordreV229LastModule=null;return}
+ const numbers={I:1,II:2,III:3,IV:4,V:5};
+ const completed=/ENREGISTRÉ|TERMINÉ|ACHEVÉ/i.test(status);
+ const progress=document.createElement('div');progress.className='v229-progress';progress.setAttribute('role','status');
+ progress.innerHTML='<span>ÉVALUATION '+current+' / V</span><span>'+(completed?'DOSSIER CONSIGNÉ':'SESSION EN COURS')+'</span>';
+ stage.insertBefore(progress,stage.firstChild);
+ const track=document.createElement('div');track.className='v229-track';track.setAttribute('aria-label','Module '+numbers[current]+' sur 5');track.innerHTML='<span style="width:'+(numbers[current]/5*100)+'%"></span>';progress.after(track);
+ if(completed){const closure=document.createElement('div');closure.className='v229-closure';closure.textContent='ÉVALUATION '+current+' TERMINÉE — RÉSULTATS CONSIGNÉS';track.after(closure)}
+ if(ordreV229LastModule!==null&&ordreV229LastModule!==current){const transition=document.createElement('div');transition.className='v229-transition';transition.setAttribute('role','status');transition.textContent='MODULE '+current+' // ACCÈS AUTORISÉ';track.after(transition);setTimeout(()=>transition.remove(),900)}
+ ordreV229LastModule=current;
+}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;ordreV229Decorate(status);}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
