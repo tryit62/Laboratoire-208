@@ -284,15 +284,15 @@ function initiateHome(){if(!ordreRequireConnection())return;
    <header class="v225-header"><div class="v225-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v225-brand-name">ORDRE DES CINQ OMBRES</span><span class="v225-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> CANAL AUTORISÉ</span></div></div><span class="v225-clearance">ACCÈS ${grade}</span></header>
    <main class="v225-main"><aside class="v225-seal"><div class="v225-seal-title">SCEAU DE DIVISION</div><div class="v225-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div><div class="v225-seal-name">${division}</div><div class="v225-seal-bottom">IDENTITÉ RECONNUE ◆</div></aside><div class="v225-content">
     <section class="v225-identity"><div class="v225-identity-copy"><span class="v225-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ RECONNUE</span><h1>${matricule}</h1><div class="v225-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div></section>
-    <section class="v225-mission" aria-label="Affectation"><span>REGISTRE DES AFFECTATIONS</span><strong>${mission}</strong><small>${S.reseauMission&&ordreAuth?.matricule===S.matricule?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
+    <section class="v225-mission" aria-label="Affectation"><span>AFFECTATION ENREGISTRÉE</span><strong>${mission}</strong><small>${S.reseauMission&&ordreAuth?.matricule===S.matricule?'NOTICE D’AFFECTATION DISPONIBLE':'EN ATTENTE D’UNE AFFECTATION AUTORISÉE'}</small></section>
     <nav class="v225-grid" aria-label="Espaces réservés aux Initiés">
-      <button onclick="initiateMissions()"><span class="v225-rubric-badge" data-notif="missions" aria-hidden="true" hidden>0</span><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v225-card-arrow">↗</span></button>
-      <button onclick="initiateMessages()"><span class="v225-rubric-badge" data-notif="messages" aria-hidden="true" hidden>0</span><span class="v225-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v225-card-name">MESSAGERIE</span><span class="v225-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateMissions()"><span class="v225-rubric-badge" data-notif="missions" aria-hidden="true" hidden>0</span><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id):'REGISTRE EN ATTENTE'}</span><span class="v225-card-arrow">↗</span></button>
+      <button onclick="initiateMessages()"><span class="v225-rubric-badge" data-notif="messages" aria-hidden="true" hidden>0</span><span class="v225-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v225-card-name">MESSAGERIE</span><span class="v225-card-desc">${ordreV210UnreadCount()?ordreV210UnreadCount()+" NON CONSULTÉE(S)":"AUCUNE TRANSMISSION EN ATTENTE"}</span><span class="v225-card-arrow">↗</span></button>
       <button onclick="initiateArchives()"><span class="v225-rubric-badge" data-notif="archives" aria-hidden="true" hidden>0</span><span class="v225-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v225-card-name">ARCHIVES</span><span class="v225-card-desc">ACCÈS ${grade}</span><span class="v225-card-arrow">↗</span></button>
       <button onclick="initiateProfile()"><span class="v225-rubric-badge" data-notif="profile" aria-hidden="true" hidden>0</span><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
     </nav></div>
    </main>
-   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button class="v225-notifications" id="v225Notifications" type="button" aria-label="Notifications de la messagerie"><span class="v225-bell" aria-hidden="true"></span><span class="v225-bell-count" id="v225BellCount">${ordreV210UnreadCount()}</span></button>${lock}</footer>
+   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button class="v225-notifications" id="v225Notifications" type="button" aria-label="Ouvrir les transmissions en attente"><span class="v225-bell" aria-hidden="true"></span><span class="v225-bell-count" id="v225BellCount">${ordreV210UnreadCount()}</span></button>${lock}</footer>
  </section>`;
  const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
   const bellBtn=document.getElementById('v225Notifications');if(bellBtn)bellBtn.onclick=initiateMessages;
@@ -428,8 +428,8 @@ function cartoBind(){
 function initiateProfile(){
  shell(`<h1 class="title">DOSSIER PERSONNEL</h1>
  <div class="profile-sheet">
- <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>OMBRE I</b></div>
- <div><span>DIVISION</span><b>${S.affectation}</b></div><div><span>MATRICULE</span><b>${S.matricule}</b></div>
+ <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>${ordreV211Esc(S.reseauGrade||'OMBRE I')}</b></div>
+ <div><span>DIVISION</span><b>${ordreV211Esc(S.reseauDivision||S.affectation||'—')}</b></div><div><span>MATRICULE</span><b>${ordreV211Esc(S.matricule||'—')}</b></div>
  <div><span>DATE D'INITIATION</span><b>${S.initiationDate||'ENREGISTRÉE'}</b></div>
  </div>
  <div class="classified-block"><div class="eyebrow">RECRUTEMENT</div><h2>DOSSIER 000 // CLÔTURÉ</h2>
@@ -2111,7 +2111,7 @@ function ordreV210Inbox(){
  const rows=[...remote,...builtIn];
  shell('<h1 class="title">MESSAGERIE</h1><p class="sub">TRANSMISSIONS INSTITUTIONNELLES ET COMMUNICATIONS DU RÉSEAU</p><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>'+ordreV210UnreadCount()+' NON LU(S)</b></div><div class="ordre-v210-list" id="ordreV210List"></div><button class="btn back" id="ordreV210Back">[ RETOUR ]</button>','MESSAGERIE // RÉSEAU');
  const el=document.getElementById('ordreV210List');
- if(!rows.length)el.textContent='AUCUN MESSAGE.';
+ if(!rows.length)el.textContent='AUCUNE TRANSMISSION EN ATTENTE.';
  rows.forEach(r=>{const b=document.createElement('button');b.className='btn ordre-v210-mail'+(r.unread?' ordre-v210-unread':'');b.innerHTML='<span class="ordre-v210-dot">'+(r.unread?'●':'○')+'</span><span><strong>'+ordreV210Escape(r.subject)+'</strong><small>'+ordreV210Escape(r.from)+'</small></span>';b.onclick=()=>{if(r.kind==='remote')ordreV210OpenRemote(r.msg);else if(r.kind==='builtin')openInitiateMessage(r.i);else ordreV210OpenCandidate()};el.append(b)});
  document.getElementById('ordreV210Back').onclick=()=>S.serment?initiateHome():home();
 }

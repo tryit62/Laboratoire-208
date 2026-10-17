@@ -1330,3 +1330,31 @@ body.initiated:has(.v225-screen) #app{height:100dvh}
 @media(max-width:600px) and (orientation:portrait){.v225-seal::after{display:none}.v225-grid button{gap:4px}.v225-card-name{line-height:1.1}}
 @media(max-height:510px) and (orientation:landscape){.v225-seal::after{display:none}.v225-grid button{gap:3px}}
 @media(prefers-reduced-motion:reduce){.v225-emblem img,.v225-grid button{transition:none!important}}
+
+/* V1.1.8 — harmonisation éditoriale et ergonomique, sans intervention sur les sessions. */
+:root{--oci-focus:#e6c98c}
+/* Navigation clavier et gestes tactiles : une réponse visible, sans mouvement permanent. */
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--oci-focus);outline-offset:3px}
+button{touch-action:manipulation}
+/* Accueil : typographie, contraste et lecture des informations longues. */
+.v225-screen .v225-card-desc,.v225-screen .v225-identity-meta,.v225-screen .v225-mission strong{overflow-wrap:anywhere}
+.v225-screen .v225-grid button{min-width:0}
+.v225-screen .v225-card-arrow{transition:color .18s ease}
+.v225-screen .v225-seal::after{content:"CONSULTATION AUTORISÉE // DIVISION"}
+.v225-screen .v225-rubric-badge{box-shadow:0 0 0 2px #12100d,0 0 8px rgba(197,164,107,.18)}
+/* Modules : une lecture de dossier plutôt qu'une accumulation de cartes. */
+.profile-sheet,.classified-block,.v112-mission-sheet,.mail-toolbar,.ordre-v210-list{max-width:100%;min-width:0}
+.profile-sheet b,.profile-sheet span,.v112-mission-grid strong,.v112-mission-grid small{overflow-wrap:anywhere}
+.ordre-v210-list button,.mail-row{transition:background-color .16s ease,border-color .16s ease}
+.ordre-v210-list button:focus-visible,.mail-row:focus-visible{outline:2px solid var(--oci-focus);outline-offset:2px}
+/* Les notifications sont des informations, jamais un effet visuel continu. */
+@media (hover:none){.v225-grid button:hover{transform:none}}
+@media (max-width:600px){
+ .v225-screen .v225-identity-meta{line-height:1.45}
+ .v225-screen .v225-mission{min-width:0}
+ .v225-screen .v225-footer .v225-network{min-width:0}
+ .profile-sheet,.v112-mission-sheet,.mail-toolbar{box-sizing:border-box}
+}
+@media (prefers-reduced-motion:reduce){
+ .ordre-v210-list button,.mail-row,.v225-screen .v225-card-arrow{transition:none!important}
+}
