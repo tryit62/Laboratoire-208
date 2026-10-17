@@ -19,7 +19,7 @@ if(S.eval2.complete && (S.progression||0)<2) S.progression=2;
 if(S.eval3.complete && (S.progression||0)<3) S.progression=3;
 if(S.eval4.complete && (S.progression||0)<4) S.progression=4;
 if(S.eval5.complete && (S.progression||0)<5) S.progression=5;
-function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){if((S.serment||S.statut==='INITIÉ')&&typeof ordreV226Shell==='function'){ordreV226Shell(body,status);return;}const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="btn" type="button" id="v214LockNow">[ VERROUILLER ]</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div>${body}${lockButton}<div class="status">PROTOCOLE ACTIF : 000 <span class="tag">${status}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
+function save(){localStorage.setItem('ordre_terminal',JSON.stringify(S));profileSave();ordreMarkLocalChange();ordreQueueSync()} function shell(body,status='SYS // SESSION : 1'){const lockButton=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="candidate-footer-action" type="button" id="v214LockNow">⌑ VERROUILLER</button>':'';app.innerHTML=`<section class="shell"><div class="brand">ORDRE DES CINQ OMBRES</div><div class="rule"></div><div class="candidate-stage">${body}</div><div class="status candidate-status">● SESSION ACTIVE <span class="tag">${status}</span><span class="candidate-footer-actions">${lockButton}</span></div></section>`;const lock=document.getElementById('v214LockNow');if(lock)lock.onclick=ordreLock;}
 function later(fn,ms=650){setTimeout(fn,ms)}
 
 /* V1.3 — PROTOTYPE : profils locaux par matricule + administration locale.
@@ -219,63 +219,40 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
    }
  },5000);
 }
-function ordreV226Grade(){const raw=String(S.reseauGrade||'').trim();return raw&&raw.toUpperCase()!=='CANDIDAT'?raw:((S.serment||S.statut==='INITIÉ')?'OMBRE I':'CANDIDAT')}
-function ordreV226Shell(body,status){
- applyInitiateTheme();
- const grade=ordreV211Esc(ordreV226Grade());
- const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button type="button" class="v226-lock" id="v214LockNow">⌑ VERROUILLER</button>':'';
- app.innerHTML=`<section class="shell v226-shell"><div class="v226-interior-brand"><img src="order-logo.png" alt=""><span>ORDRE DES CINQ OMBRES <small>RÉSEAU CONFIDENTIEL // ${grade}</small></span></div><div class="v226-interior-content">${body}</div><footer class="v226-interior-footer"><span>RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button type="button" class="v227-bell" aria-label="Centre de notifications" onclick="ordreV227Panel()">♢ <span id="v227InteriorCount" class="v227-bubble" hidden></span></button>${lock}</footer></section>`;
- const b=document.getElementById('v214LockNow');if(b)b.onclick=ordreV226AnimatedLock;queueMicrotask(ordreV227Decorate);
-}
-let ordreV226Locking=false;
-function ordreV226AnimatedLock(){
- if(ordreV226Locking||ordreLockActive)return;
- ordreV226Locking=true;
- // Revoke the local authorization immediately, before the animation begins.
- const old=ordreAuth;
- ordreLockActive=true;ordreClearAuth();
- if(ordreLockTimer){clearInterval(ordreLockTimer);ordreLockTimer=null;}
- if(old?.access_token){ordreNetFetch('/auth/v1/logout',{method:'POST',token:old.access_token,body:'{}'}).catch(()=>{});}
- const stages=['FERMETURE DE LA SESSION','CHIFFREMENT DES TRANSMISSIONS','SCELLEMENT DES ARCHIVES','RÉVOCATION DES ACCÈS','VERROUILLAGE DU TERMINAL','TERMINAL SÉCURISÉ'];
- document.body.classList.add('v226-lock-mode');
- app.innerHTML=`<section class="v226-lock-screen" role="status" aria-live="polite"><div class="v226-lock-crest">◇</div><div class="v226-lock-kicker">ORDRE DES CINQ OMBRES // PROTOCOLE DE SÉCURITÉ</div><h1>SÉCURISATION DU TERMINAL</h1><div class="v226-lock-stage" id="v226LockStage">${stages[0]}</div><div class="v226-lock-track"><div id="v226LockProgress"></div></div><div class="v226-lock-crypt" aria-hidden="true">7F 0A 4C 91 // ████ // A2 0D 8F</div></section>`;
- const started=Date.now();const tick=()=>{if(!document.getElementById('v226LockStage'))return;const elapsed=Date.now()-started;const fraction=Math.min(1,elapsed/6000);const index=Math.min(5,Math.floor(fraction*6));document.getElementById('v226LockStage').textContent=stages[index];document.getElementById('v226LockProgress').style.width=(fraction*100)+'%';if(fraction<1){setTimeout(tick,90)}else{document.body.classList.remove('v226-lock-mode','initiated','cinematic-mode','div-eye','div-flame','div-hand','div-spiral','div-hourglass');ordreV226Locking=false;ordreShowLink();}};tick();
-}
 function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
  let entrance='';
- try{const k='OCI_V225_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v225-entrance';}}catch(e){}
- const grade=ordreV211Esc(ordreV226Grade());
+ try{const k='OCI_V224_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v224-entrance';}}catch(e){}
+ const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
- const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'EN ATTENTE DE DIRECTIVE';
- const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v225-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
- app.innerHTML=`<section class="v225-screen${entrance}" aria-label="Accueil Initié">
-   <header class="v225-header"><div class="v225-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v225-brand-name">ORDRE DES CINQ OMBRES</span><span class="v225-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v225-clearance">ACCÈS ${grade}</span></header>
-   <main class="v225-main"><aside class="v225-seal"><div class="v225-seal-title">SCEAU DE DIVISION</div><div class="v225-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div><div class="v225-seal-name">${division}</div><div class="v225-seal-bottom">IDENTITÉ RECONNUE ◆</div></aside><div class="v225-content">
-    <section class="v225-identity"><div class="v225-identity-copy"><span class="v225-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v225-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div></section>
-    <section class="v225-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
-    <nav class="v225-grid" aria-label="Espaces réservés aux Initiés">
-      <button onclick="initiateMissions()"><span class="v225-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v225-card-name">MISSIONS</span><span class="v225-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'EN ATTENTE DE DIRECTIVE'}</span><span class="v225-card-arrow">↗</span></button>
-      <button onclick="initiateMessages()"><span class="v225-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v225-card-name">MESSAGERIE</span><span class="v225-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v225-card-arrow">↗</span></button>
-      <button onclick="initiateArchives()"><span class="v225-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v225-card-name">ARCHIVES</span><span class="v225-card-desc">ACCÈS ${grade}</span><span class="v225-card-arrow">↗</span></button>
-      <button onclick="initiateProfile()"><span class="v225-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v225-card-name">DOSSIER PERSONNEL</span><span class="v225-card-desc">D000 // CLÔTURÉ</span><span class="v225-card-arrow">↗</span></button>
-    </nav></div>
+ const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
+ const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v224-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
+ app.innerHTML=`<section class="v224-screen${entrance}" aria-label="Accueil Initié">
+   <header class="v224-header"><div class="v224-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v224-brand-name">ORDRE DES CINQ OMBRES</span><span class="v224-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v224-clearance">ACCÈS ${grade}</span></header>
+   <main class="v224-main">
+    <section class="v224-identity"><div class="v224-identity-copy"><span class="v224-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v224-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div><div class="v224-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div></section>
+    <section class="v224-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
+    <nav class="v224-grid" aria-label="Espaces réservés aux Initiés">
+      <button onclick="initiateMissions()"><span class="v224-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v224-card-name">MISSIONS</span><span class="v224-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateMessages()"><span class="v224-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v224-card-name">MESSAGERIE</span><span class="v224-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateArchives()"><span class="v224-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v224-card-name">ARCHIVES</span><span class="v224-card-desc">ACCÈS ${grade}</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateProfile()"><span class="v224-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v224-card-name">DOSSIER PERSONNEL</span><span class="v224-card-desc">D000 // CLÔTURÉ</span><span class="v224-card-arrow">↗</span></button>
+    </nav>
    </main>
-   <footer class="v225-footer"><span class="v225-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><button type="button" class="v227-bell" aria-label="Centre de notifications" onclick="ordreV227Panel()">♢ <span id="v227HomeCount" class="v227-bubble" hidden></span></button>${lock}</footer>
+   <footer class="v224-footer"><span class="v224-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v224-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
  </section>`;
- const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreV226AnimatedLock;ordreV227Decorate();
+ const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
- if(S.reseauMission?.id)ordreV227Seen('mission:'+S.reseauMission.id);
  const mission=S.reseauMission;
  if(mission&&ordreAuth?.matricule===S.matricule){
-  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // '+ordreV226Grade());
+  shell('<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">DIRECTIVE OPÉRATIONNELLE REÇUE</div><h2 id="v211MissionCode"></h2><p id="v211MissionLabel"></p><p>Votre affectation est enregistrée. Le contenu du dossier n’est pas encore disponible dans ce terminal.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>','MISSIONS // OMBRE I');
   $('#v211MissionCode').textContent=mission.id;$('#v211MissionLabel').textContent=mission.label;return;
  }
- shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // '+ordreV226Grade());
+ shell(`<h1 class="title">MISSIONS</h1><div class="classified-block"><div class="eyebrow">AFFECTATIONS OPÉRATIONNELLES</div><h2>AUCUNE AFFECTATION</h2><p>Votre intégration au réseau est en cours.</p><p>Une première affectation vous sera transmise par votre Division.</p></div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
 } 
 const INITIATE_MESSAGES=[
  {from:'ADMINISTRATION',subject:'CHANGEMENT DE STATUT',date:'AUJOURD’HUI',preview:'Confirmation de votre nouveau niveau d’accès.',body:()=>`Votre dossier candidat a été clôturé.\n\nVotre statut est désormais INITIÉ.\nAccréditation attribuée : OMBRE I.\n\nLes informations accessibles restent soumises au principe de compartimentation. Toute consultation excédant votre niveau d’autorisation doit être interrompue et signalée.`},
@@ -288,8 +265,7 @@ function initiateMessages(){ordreV210Inbox();return;
  const read=readMailSet(), unread=unreadMailCount();
  shell(`<h1 class="title">MESSAGERIE</h1><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>${unread} NON LU${unread>1?'S':''}</b></div><div class="mail-inbox">${INITIATE_MESSAGES.map((m,i)=>{const from=typeof m.from==='function'?m.from():m.from;const isUnread=!read.has(i);return `<button class="mail-row ${isUnread?'unread-mail':'read-mail'}" onclick="openInitiateMessage(${i})"><span class="mail-status">${isUnread?'●':'○'}</span><span class="mail-from">${from}</span><span class="mail-subject"><b>${m.subject}</b><small>${m.preview}</small></span><span class="mail-date">${m.date}</span></button>`}).join('')}</div><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MESSAGERIE // BOÎTE DE RÉCEPTION');
 }
-function openInitiateMessage(i){return ordreV226OpenMessage({kind:'builtin',i,from:typeof INITIATE_MESSAGES[i].from==='function'?INITIATE_MESSAGES[i].from():INITIATE_MESSAGES[i].from,subject:INITIATE_MESSAGES[i].subject,date:'DATE NON COMMUNIQUÉE'});
-
+function openInitiateMessage(i){
  if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];
  if(!S.initieMessagesLus.includes(i)){S.initieMessagesLus.push(i);save()}
  const m=INITIATE_MESSAGES[i],from=typeof m.from==='function'?m.from():m.from,body=m.body();
@@ -392,17 +368,17 @@ function cartoBind(){
 }
 
 function initiateProfile(){
- shell(`<div class="v225-profile"><header class="v225-profile-head"><small>REGISTRE DES INITIÉS // DOCUMENT CLASSIFIÉ</small><h1>DOSSIER PERSONNEL</h1><p>Identité, habilitation et historique d’admission</p></header>
- <div class="profile-sheet v225-profile-sheet">
- <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>${ordreV211Esc(ordreV226Grade())}</b></div>
+ shell(`<h1 class="title">DOSSIER PERSONNEL</h1>
+ <div class="profile-sheet">
+ <div><span>STATUT</span><b>INITIÉ</b></div><div><span>ACCRÉDITATION</span><b>OMBRE I</b></div>
  <div><span>DIVISION</span><b>${S.affectation}</b></div><div><span>MATRICULE</span><b>${S.matricule}</b></div>
  <div><span>DATE D'INITIATION</span><b>${S.initiationDate||'ENREGISTRÉE'}</b></div>
  </div>
- <div class="classified-block v225-profile-history"><div class="eyebrow">RECRUTEMENT</div><h2>DOSSIER 000 // CLÔTURÉ</h2>
+ <div class="classified-block"><div class="eyebrow">RECRUTEMENT</div><h2>DOSSIER 000 // CLÔTURÉ</h2>
  <p>ÉVALUATION I — VALIDÉE<br>ÉVALUATION II — VALIDÉE<br>ÉVALUATION III — VALIDÉE<br>ÉVALUATION IV — VALIDÉE<br>ÉVALUATION V — VALIDÉE</p></div>
  <div class="profile-restricted"><b>PROFIL D'APTITUDE</b><span>[ACCÈS RESTREINT]</span></div>
  <div class="profile-restricted"><b>MOTIF D'AFFECTATION</b><span>[ACCÈS OMBRE II REQUIS]</span></div>
- <button class="btn" onclick="initBack()">← RETOUR AU TABLEAU DE BORD</button></div>`,'DOSSIER PERSONNEL // INITIÉ');
+ <button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'DOSSIER PERSONNEL // INITIÉ');
 }
 function home(){if(!ordreRequireConnection())return;
   if(S.serment||S.statut==='INITIÉ'){ if(!S.initieAccueilVu){initiateFirstEntry();return} initiateHome();return }
@@ -554,9 +530,10 @@ function eval1CardQuestion(i){
     if(!Array.isArray(S.eval1.cardAnswers))S.eval1.cardAnswers=[];
     S.eval1.cardAnswers[i]=b.dataset.v;
     S.eval1.step=4+i;save();
-    eval1CardQuestion(i+1);
+    ordreCandidateCardTransition(i+1);
   });
 }
+function ordreCandidateCardTransition(nextIndex){const host=document.querySelector('.shell');if(!host){eval1CardQuestion(nextIndex);return}const notice=document.createElement('div');notice.className='candidate-card-confirmation';notice.setAttribute('role','status');notice.textContent='DÉCISION CONSIGNÉE // CARTE '+String(nextIndex).padStart(2,'0')+' / 06';host.appendChild(notice);host.querySelectorAll('.card-judgement').forEach(b=>b.disabled=true);setTimeout(()=>eval1CardQuestion(nextIndex),560)}
 function eval1Confrontation(){
   S.eval1.step=9;save();
   const labels={ETABLI:'ÉTABLI',NON_ETABLI:'NON ÉTABLI',INCERTAIN:'INCERTAIN'};
@@ -1322,7 +1299,7 @@ function assignmentFinal(result){
   $('#afterAccess').onclick=assignmentAfter;
 }
 function assignmentAfter(){
-  shell(`<h1 class="title">PROTOCOLE 000 // DIRECTIVE ZÉRO</h1><div class="terminal">OUVERTURE DE L'ENVELOPPE « DIRECTIVE ZÉRO » : AUTORISÉE.\n\nRETIREZ SON CONTENU SANS JETER L'ENVELOPPE.\n\nVÉRIFIEZ LA PRÉSENCE DES ÉLÉMENTS SUIVANTS :\nA — CARTE D'INITIÉ\nB — CINQ SCEAUX\nC — CARTE DES CINQ DIVISIONS\nD — CARTE D'ACCÈS OMBRE I\nE — FEUILLET SERMENT\n\nNE PRÊTEZ PAS ENCORE SERMENT.</div><div class="menu"><button class="btn primary" id="afterOk">[ CONTENU CONFORME ]</button><button class="btn" id="afterBad">[ CONTENU INCOMPLET ]</button></div>`,'PROTOCOLE 000 // DIRECTIVE ZÉRO');
+  shell(`<h1 class="title">PROTOCOLE 000 // DIRECTIVE ZÉRO</h1><div class="terminal">OUVERTURE DE L'ENVELOPPE « DIRECTIVE ZÉRO » : AUTORISÉE.\n\nRETIREZ SON CONTENU SANS JETER L'ENVELOPPE.\n\nVÉRIFIEZ LA PRÉSENCE DES ÉLÉMENTS SUIVANTS :\nA — CARTE D'INITIÉ\nB — CINQ SCEAUX\nC — ACTE D'ADMISSION\n\nNE PRÊTEZ PAS ENCORE SERMENT.</div><div class="menu"><button class="btn primary" id="afterOk">[ CONTENU CONFORME ]</button><button class="btn" id="afterBad">[ CONTENU INCOMPLET ]</button></div>`,'PROTOCOLE 000 // DIRECTIVE ZÉRO');
   $('#afterOk').onclick=()=>{S.sermentDisponible=true;save();assignmentOathAuthorize()};
   $('#afterBad').onclick=assignmentMaterialIssue;
 }
@@ -1333,9 +1310,7 @@ function assignmentMaterialIssue(){
   <div class="material-checks">
     <label class="material-check"><input type="checkbox" value="A"><div><strong>A — CARTE D'INITIÉ</strong><span>ABSENTE / NON CONFORME</span></div></label>
     <label class="material-check"><input type="checkbox" value="B"><div><strong>B — CINQ SCEAUX</strong><span>ABSENTS / NOMBRE INCORRECT / NON CONFORMES</span></div></label>
-    <label class="material-check"><input type="checkbox" value="C"><div><strong>C — CARTE DES CINQ DIVISIONS</strong><span>ABSENTE / NON CONFORME</span></div></label>
-    <label class="material-check"><input type="checkbox" value="D"><div><strong>D — CARTE D'ACCÈS OMBRE I</strong><span>ABSENTE / NON CONFORME</span></div></label>
-    <label class="material-check"><input type="checkbox" value="E"><div><strong>E — FEUILLET SERMENT</strong><span>ABSENT / NON CONFORME</span></div></label>
+    <label class="material-check"><input type="checkbox" value="C"><div><strong>C — ACTE D'ADMISSION</strong><span>ABSENT / NON CONFORME</span></div></label>
   </div>
   <div class="menu"><button class="btn primary" id="materialSend">[ TRANSMETTRE L'ANOMALIE ]</button><button class="btn" id="materialRetry">[ VÉRIFIER À NOUVEAU ]</button></div>
   <div id="materialFeedback" class="system"></div>`,'SUPERVISION // INVENTAIRE');
@@ -1381,7 +1356,7 @@ const OATH_LINES=[
 function assignmentOathAuthorize(){
   S.sermentDisponible=true;save();
   shell(`<h1 class="title">PROTOCOLE 000 // SERMENT</h1>
-  <div class="terminal">CONTENU : CONFORME.\nAFFECTATION : ${S.affectation}\nSTATUT : CANDIDAT\n\nFEUILLET SERMENT : AUTORISÉ.\n\nLISEZ L'ACTE D'ADMISSION EN ENTIER AVANT DE CONTINUER.\nLE TERMINAL N'ENREGISTRE AUCUNE DONNÉE VOCALE.</div>
+  <div class="terminal">CONTENU : CONFORME.\nAFFECTATION : ${S.affectation}\nSTATUT : CANDIDAT\n\nPROCÉDURE D’ADMISSION : AUTORISÉE.\n\nLISEZ L'ACTE D'ADMISSION EN ENTIER AVANT DE CONTINUER.\nLE TERMINAL N'ENREGISTRE AUCUNE DONNÉE VOCALE.</div>
   <div class="menu"><button class="btn primary" id="oathRead">[ LECTURE DU SERMENT ]</button><button class="btn" id="oathLater">[ DIFFÉRER ]</button></div>`,'PROTOCOLE 000 // SERMENT AUTORISÉ');
   $('#oathRead').onclick=oathDisplay;$('#oathLater').onclick=home;
 }
@@ -2046,7 +2021,7 @@ function ordreV2Orders(){
  $('#v2Back').onclick=()=>S.serment?initiateHome():home();
 }
 // Persistent, separate access point; does not rewrite the canonical evaluation/mission story.
-function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE||(S.serment||S.statut==='INITIÉ'))return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.status');sh.insertBefore(el,footer);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
+function ordreV2MenuButton(){if(!ordreAuth?.player_id||ADMIN_MODE)return;const el=document.createElement('div');el.className='menu';el.innerHTML='<button class="btn" id="v2Directives">[ DIRECTIVES REÇUES ]</button>'; const sh=document.querySelector('.shell');if(sh){const footer=sh.querySelector('.candidate-footer-actions');if(footer){el.className='candidate-footer-inline';el.querySelector('button').className='candidate-footer-action';footer.prepend(el)}else sh.append(el);el.querySelector('#v2Directives').onclick=()=>{ordreV2Refresh().then(ordreV2Orders)}}}
 const ordreV2NativeShell=shell;
 shell=function(...args){ordreV2NativeShell(...args);if(typeof ordreAuth!=='undefined')ordreV2MenuButton()};
 
@@ -2069,29 +2044,31 @@ function ordreV210Decorate(){
  if(!bar){bar=document.createElement('button');bar.type='button';bar.id='ordreV210Indicator';bar.className='ordre-v210-indicator';bar.onclick=ordreV210Inbox;document.body.append(bar)}
  bar.hidden=!count;bar.textContent='● NOUVELLE TRANSMISSION // '+count+' NON LU(S)';
 }
-function ordreV226Stamp(m){const d=m.created_at||m.sent_at||m.date||m.timestamp;if(!d)return 'DATE NON COMMUNIQUÉE';const t=new Date(d);return Number.isNaN(t.getTime())?'DATE NON COMMUNIQUÉE':new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(t)}
-function ordreV226ShowInbox(){ordreV210Inbox()}
 function ordreV210Inbox(){
- const remote=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
- const builtIn=S.serment?INITIATE_MESSAGES.map((m,i)=>({kind:'builtin',i,subject:m.subject,from:typeof m.from==='function'?m.from():m.from,unread:!readMailSet().has(i),date:'DATE NON COMMUNIQUÉE'})):(!S.serment&&S.messages?[{kind:'candidate',subject:'SUPERVISION — 000',from:'SUPERVISION',unread:true,date:'DATE NON COMMUNIQUÉE'}]:[]);
- const rows=[...remote.map(m=>({kind:'remote',msg:m,subject:m.subject,from:m.sender_name||m.sender||'CENTRE DE COMMANDEMENT',unread:!m.read_at,date:ordreV226Stamp(m)})),...builtIn];
- shell(`<div class="v226-page"><div class="v226-page-kicker">TRANSMISSIONS INSTITUTIONNELLES / CANAL SÉCURISÉ</div><h1>MESSAGERIE</h1><div class="v226-mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>${ordreV210UnreadCount()} NON LU(S)</b></div><div class="v226-inbox" id="ordreV210List"></div><button class="btn v226-back" id="ordreV210Back">← RETOUR AU TABLEAU DE BORD</button></div>`,'MESSAGERIE // RÉSEAU');
- const el=document.getElementById('ordreV210List');if(!rows.length)el.textContent='AUCUNE TRANSMISSION.';
- rows.forEach((r,i)=>{const b=document.createElement('button');b.type='button';b.className='v226-mail-row'+(r.unread?' is-unread':'');b.innerHTML=`<span class="v226-mail-mark">${r.unread?'◆':'◇'}</span><span class="v226-mail-data"><span class="v226-mail-from">${ordreV210Escape(r.from)}</span><strong>${ordreV210Escape(r.subject)}</strong><small>${r.kind==='builtin'?ordreV210Escape(INITIATE_MESSAGES[r.i].preview):'TRANSMISSION CONFIDENTIELLE'}</small></span><time>${ordreV210Escape(r.date)}</time><span class="v226-mail-arrow">↗</span>`;b.onclick=()=>ordreV226OpenMessage(r);el.append(b)});
+ const msgs=Array.isArray(S.reseauMessages)?S.reseauMessages:[];
+ const candidateLegacy=!S.serment&&!!S.messages;
+ const builtIn=S.serment?INITIATE_MESSAGES.map((m,i)=>({kind:'builtin',i,subject:m.subject,from:typeof m.from==='function'?m.from():m.from,unread:!readMailSet().has(i)})):(candidateLegacy?[{kind:'candidate',subject:'SUPERVISION — 000',from:'SUPERVISION',unread:true}]:[]);
+ const remote=msgs.map(m=>({kind:'remote',msg:m,subject:m.subject,from:'CENTRE DE COMMANDEMENT',unread:!m.read_at}));
+ const rows=[...remote,...builtIn];
+ shell('<h1 class="title">MESSAGERIE</h1><p class="sub">TRANSMISSIONS INSTITUTIONNELLES ET COMMUNICATIONS DU RÉSEAU</p><div class="mail-toolbar"><span>BOÎTE DE RÉCEPTION</span><b>'+ordreV210UnreadCount()+' NON LU(S)</b></div><div class="ordre-v210-list" id="ordreV210List"></div><button class="btn back" id="ordreV210Back">[ RETOUR ]</button>','MESSAGERIE // RÉSEAU');
+ const el=document.getElementById('ordreV210List');
+ if(!rows.length)el.textContent='AUCUN MESSAGE.';
+ rows.forEach(r=>{const b=document.createElement('button');b.className='btn ordre-v210-mail'+(r.unread?' ordre-v210-unread':'');b.innerHTML='<span class="ordre-v210-dot">'+(r.unread?'●':'○')+'</span><span><strong>'+ordreV210Escape(r.subject)+'</strong><small>'+ordreV210Escape(r.from)+'</small></span>';b.onclick=()=>{if(r.kind==='remote')ordreV210OpenRemote(r.msg);else if(r.kind==='builtin')openInitiateMessage(r.i);else ordreV210OpenCandidate()};el.append(b)});
  document.getElementById('ordreV210Back').onclick=()=>S.serment?initiateHome():home();
 }
-function ordreV226OpenMessage(r){
- const esc=ordreV210Escape;
- const body=r.kind==='remote'?String(r.msg.body||''):r.kind==='builtin'?String(INITIATE_MESSAGES[r.i].body()):'Le matériel déclaré a été enregistré.\nProcédez au Module I.';
- shell(`<div class="v226-page v226-reader"><div class="v226-page-kicker">TRANSMISSION CHIFFRÉE // CANAL INSTITUTIONNEL</div><div class="v226-decrypt" id="v226Decrypt"><div>◇ DÉCHIFFREMENT DE LA TRANSMISSION</div><div class="v226-decrypt-line"></div></div><article class="v226-message-detail" id="v226MessageDetail" hidden><header><span>TRANSMISSION AUTHENTIFIÉE</span><span>${esc(r.date)}</span></header><h1>${esc(r.subject)}</h1><div class="v226-message-meta"><div><small>EXPÉDITEUR</small><b>${esc(r.from)}</b></div><div><small>DESTINATAIRE</small><b>${esc(S.matricule||'')}</b></div></div><div class="v226-message-body">${esc(body).replace(/\n/g,'<br>')}</div><div class="v226-message-sign">FIN DE TRANSMISSION // ${esc(r.from)}</div></article><button class="btn v226-back" id="v226InboxBack">← BOÎTE DE RÉCEPTION</button></div>`,'MESSAGERIE // LECTURE');
- document.getElementById('v226InboxBack').onclick=ordreV210Inbox;
- const show=()=>{ordreV227Decorate();const d=document.getElementById('v226Decrypt'),m=document.getElementById('v226MessageDetail');if(d&&m){d.remove();m.hidden=false;m.classList.add('v226-message-reveal')}};
- setTimeout(show,window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1200);
- if(r.kind==='remote')ordreV226MarkRemote(r.msg);else if(r.kind==='builtin'){if(!Array.isArray(S.initieMessagesLus))S.initieMessagesLus=[];if(!S.initieMessagesLus.includes(r.i)){S.initieMessagesLus.push(r.i);save()}}else{S.messages=0;save()}
+function ordreV210OpenCandidate(){S.messages=0;save();shell(`<div class="candidate-transmission"><p class="candidate-kicker">TRANSMISSION AUTHENTIFIÉE // SUPERVISION</p><h1 class="title">ACTIVATION CONFIRMÉE</h1><p>Candidat,</p><p>Votre accès au Terminal a été établi avec succès.</p><p>À compter de cet instant, votre progression est placée sous la supervision de l'Ordre des Cinq Ombres.</p><p>Les épreuves qui vous attendent participent à l'évaluation de votre aptitude à poursuivre le processus d'admission.</p><p>Suivez les directives. Observez avec attention. Ne présumez de rien.</p><p class="candidate-emphasis">Vous êtes désormais attendu au Module I.</p><p class="tiny">FIN DE TRANSMISSION // AUCUNE RÉPONSE REQUISE</p></div><button class="btn back" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>`,'SUPERVISION // ACTIVATION');document.getElementById('ordreV210Back').onclick=ordreV210Inbox}
+async function ordreV210OpenRemote(m){
+ shell('<h1 class="title" id="ordreV210Subject"></h1><p class="sub">CENTRE DE COMMANDEMENT // TRANSMISSION INDIVIDUELLE</p><div class="terminal" id="ordreV210Body"></div><button class="btn back" id="ordreV210Back">[ BOÎTE DE RÉCEPTION ]</button>','MESSAGERIE // LECTURE');
+ document.getElementById('ordreV210Subject').textContent=m.subject;
+ document.getElementById('ordreV210Body').textContent=m.body;
+ document.getElementById('ordreV210Back').onclick=ordreV210Inbox;
+ if(m.read_at)return;
+ try{
+  const token=await ordreValidToken();if(!token)return;
+  const confirmed=await ordreNetFetch('/rest/v1/rpc/v210_mark_message_read',{method:'POST',token,body:JSON.stringify({p_message:m.id})});
+  if(confirmed){m.read_at=new Date().toISOString();profileSave();ordreV210Decorate()}
+ }catch(e){console.warn('Accusé de lecture différé :',e.message)}
 }
-async function ordreV226MarkRemote(m){if(m.read_at)return;try{const token=await ordreValidToken();if(!token)return;const confirmed=await ordreNetFetch('/rest/v1/rpc/v210_mark_message_read',{method:'POST',token,body:JSON.stringify({p_message:m.id})});if(confirmed){m.read_at=new Date().toISOString();profileSave();ordreV210Decorate()}}catch(e){console.warn('Accusé de lecture différé :',e.message)}}
-function ordreV210OpenCandidate(){ordreV226OpenMessage({kind:'candidate',from:'SUPERVISION',subject:'SUPERVISION — 000',date:'DATE NON COMMUNIQUÉE'})}
-function ordreV210OpenRemote(m){ordreV226OpenMessage({kind:'remote',msg:m,subject:m.subject,from:m.sender_name||m.sender||'CENTRE DE COMMANDEMENT',date:ordreV226Stamp(m)})}
 // Preserve V209 poll and refresh; repaint only when message count changes, without rerendering active screens.
 const ordreV210OriginalPoll=ordreV2Poll;
 ordreV2Poll=async function(){
@@ -2134,7 +2111,7 @@ async function ordreV213List(){
  el.textContent='CHARGEMENT DES AUTORISATIONS...';
  try{
   const data=await ordreV213Rpc('v213_archive_index',{});
-  ordreV213Catalogue=Array.isArray(data)?data:[];ordreV227Decorate();
+  ordreV213Catalogue=Array.isArray(data)?data:[];
   el.replaceChildren();
   if(!ordreV213Catalogue.length){el.textContent='AUCUNE ARCHIVE SUPPLÉMENTAIRE PUBLIÉE POUR VOTRE ACCRÉDITATION.';return}
   for(const doc of ordreV213Catalogue){
@@ -2155,43 +2132,9 @@ async function ordreV213Read(docId){
   if(!d){out.textContent='ACCÈS REFUSÉ OU DOCUMENT RETIRÉ.';return}
   out.replaceChildren();const h=document.createElement('h2');h.textContent=d.doc_id+' // '+d.title;
   const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';pre.style.overflowWrap='anywhere';pre.textContent=d.body;
-  out.append(h,pre);ordreV227Seen('archive:'+docId);ordreV227Decorate();
+  out.append(h,pre);
  }catch(e){out.textContent='LECTURE REFUSÉE : '+e.message}
 }
-
-
-/* V227 BÊTA — notifications issues exclusivement des données effectivement accessibles.
-   La lecture des messages reste pilotée par la RPC V210, sans écriture d'autorisation. */
-function ordreV227Key(){return 'OCI_V227_SEEN_'+String(ordreAuth?.player_id||S.matricule||'anonymous')}
-function ordreV227SeenSet(){try{return new Set(JSON.parse(localStorage.getItem(ordreV227Key())||'[]'))}catch(e){return new Set()}}
-function ordreV227Seen(key){const set=ordreV227SeenSet();set.add(key);try{localStorage.setItem(ordreV227Key(),JSON.stringify([...set]))}catch(e){}}
-function ordreV227Items(){
- if(!S.serment||!ordreAuth?.player_id||ordreAuth.matricule!==S.matricule)return [];
- const seen=ordreV227SeenSet(),items=[];
- const unread=ordreV210UnreadCount();
- if(unread)items.push({type:'mail',title:'TRANSMISSIONS NON LUES',subtitle:unread+' message(s) à consulter',count:unread});
- if(S.reseauMission?.id&&!seen.has('mission:'+S.reseauMission.id))items.push({type:'mission',title:'NOUVELLE AFFECTATION',subtitle:String(S.reseauMission.id),count:1});
- const archives=ordreV213Catalogue.filter(d=>d?.doc_id&&!seen.has('archive:'+d.doc_id));
- if(archives.length)items.push({type:'archive',title:'ARCHIVES À CONSULTER',subtitle:archives.length+' document(s) publiés',count:archives.length});
- return items;
-}
-function ordreV227Decorate(){
- const items=ordreV227Items(),total=items.reduce((n,i)=>n+i.count,0);
- document.querySelectorAll('.v227-bubble').forEach(el=>{el.hidden=!total;el.textContent=total>99?'99+':String(total)});
- const cards=document.querySelectorAll('.v225-grid button');
- const lookup={mission:0,mail:1,archive:2};
- cards.forEach(card=>card.querySelectorAll('.v227-card-bubble').forEach(x=>x.remove()));
- items.forEach(i=>{const card=cards[lookup[i.type]];if(!card)return;const badge=document.createElement('span');badge.className='v227-card-bubble';badge.textContent=i.count>99?'99+':String(i.count);card.append(badge)});
-}
-function ordreV227Panel(){
- const items=ordreV227Items();
- const esc=ordreV210Escape;
- const rows=items.length?items.map((item,i)=>`<button class="v227-notification" type="button" data-v227="${i}"><span class="v227-notification-symbol">${item.type==='mail'?'✉':item.type==='archive'?'▤':'◇'}</span><span><strong>${esc(item.title)}</strong><small>${esc(item.subtitle)}</small></span><b class="v227-bubble">${item.count}</b></button>`).join(''):'<p class="v227-empty">AUCUNE NOUVELLE NOTIFICATION.</p>';
- shell(`<div class="v226-page v227-center"><div class="v226-page-kicker">RÉSEAU DES OMBRES // ACTIVITÉ</div><h1>CENTRE DE NOTIFICATIONS</h1><p class="v227-intro">Transmissions et éléments publiés pour votre accréditation.</p><div class="v227-notifications">${rows}</div><button class="btn v226-back" onclick="initiateHome()">← RETOUR AU TABLEAU DE BORD</button></div>`,'RÉSEAU // NOTIFICATIONS');
- document.querySelectorAll('[data-v227]').forEach(b=>b.onclick=()=>{const item=items[Number(b.dataset.v227)];if(!item)return;if(item.type==='mail')initiateMessages();else if(item.type==='mission')initiateMissions();else initiateArchives()});
-}
-const ordreV227PreviousDecorate=ordreV210Decorate;
-ordreV210Decorate=function(){ordreV227PreviousDecorate();ordreV227Decorate()};
 
 // V222: traiter le retour de cérémonie avant le démarrage ordinaire.
 ordreV222ResumeCeremony();
