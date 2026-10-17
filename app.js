@@ -222,7 +222,10 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
 function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
- shell(`<section class="init-dashboard">
+ // Animation d'accueil limitée à une seule fois par session authentifiée.
+ let v223Entrance='';
+ try{const k='OCI_V223_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');v223Entrance=' v223-entrance';}}catch(e){}
+ shell(`<section class="init-dashboard${v223Entrance}">
    <div class="init-id">
     <div><div class="eyebrow">DOSSIER ACTIF</div><h1>${S.matricule||'INITIÉ'}</h1>
     <div class="init-meta">STATUT // INITIÉ<br>ACCRÉDITATION // ${ordreV211Esc(S.reseauGrade||'OMBRE I')}<br>DIVISION // ${ordreV211Esc(S.reseauDivision||S.affectation)}</div></div>
@@ -1514,6 +1517,7 @@ async function ordreV222ResumeCeremony(){
  }catch(e){}
  if(!result || !['complete','replay'].includes(result)){boot();return;}
  if(!bridge?.access_token||!bridge?.player_id||!bridge?.matricule){
+  // V223 : garder la preuve de fin en attente pendant une nouvelle authentification.
   boot();return;
  }
  shell('<h1 class="title">RETOUR DE CÉRÉMONIE</h1><div class="terminal" id="v222Status">RÉTABLISSEMENT DU CANAL SÉCURISÉ...</div>','INITIATION // SYNCHRONISATION');
@@ -1550,7 +1554,7 @@ async function ordreV222ResumeCeremony(){
   shell('<h1 class="title">RETOUR DE CÉRÉMONIE EN ATTENTE</h1><div class="terminal" id="v222Error"></div><div class="menu"><button class="btn primary" id="v222Retry">[ RÉESSAYER LA SYNCHRONISATION ]</button><button class="btn" id="v222Login">[ CONNEXION PERSONNELLE ]</button></div>','INITIATION // VÉRIFICATION');
   document.getElementById('v222Error').textContent='La cérémonie est terminée, mais la sauvegarde n’a pas été confirmée : '+e.message;
   document.getElementById('v222Retry').onclick=ordreV222ResumeCeremony;
-  document.getElementById('v222Login').onclick=()=>{sessionStorage.removeItem('OCI_CEREMONY_AUTH');sessionStorage.removeItem('OCI_CEREMONY_RESULT');ordreShowLink()};
+  document.getElementById('v222Login').onclick=()=>{sessionStorage.removeItem('OCI_CEREMONY_AUTH');ordreShowLink()};
  }
 }
 
@@ -1673,8 +1677,48 @@ async function ordreV214CompleteLink(x){
  localStorage.setItem(ORDRE_LINK_STORE,JSON.stringify(ordreAuth));
  try{await ordreRestoreProgress(token)}catch(e){ordreClearAuth();ordreLockActive=true;throw e}
  ordrePendingChanges=false;ordreSyncReady=true;ordreScheduleLock();
+ // V223 : reprendre une cérémonie terminée uniquement après vérification de l'identité.
+ try{await ordreV223CompleteAfterLogin()}catch(e){console.warn('V223 : clôture en attente après authentification',e);}
  // Ne pas écrire automatiquement au simple fait de se connecter.
  // Une nouvelle sauvegarde partira uniquement après une action du joueur. 
+}
+/* V223 BÊTA — reprise de la première cérémonie après reconnexion authentifiée. */
+async function ordreV223CompleteAfterLogin(){
+ let result=null,payload=null;
+ try{
+  result=sessionStorage.getItem('OCI_CEREMONY_RESULT');
+  payload=JSON.parse(sessionStorage.getItem('OCI_CEREMONY_PAYLOAD')||'null');
+ }catch(e){}
+ if(result!=='complete' && result!=='replay')return;
+ // Le marqueur ne constitue jamais une autorisation d'accès ou une preuve de serment.
+ if(!payload?.matricule || payload.matricule!==ordreAuth?.matricule || S.matricule!==ordreAuth.matricule)return;
+ if(!S.serment || S.statut!=='INITIÉ')return;
+ if(result==='replay'){
+  sessionStorage.removeItem('OCI_CEREMONY_RESULT');
+  sessionStorage.removeItem('OCI_CEREMONY_PAYLOAD');
+  sessionStorage.removeItem('OCI_CEREMONY_AUTH');
+  return;
+ }
+ // Vérifier d'abord la source distante, puis ne modifier que les indicateurs de clôture.
+ const token=await ordreValidToken();
+ if(!token)throw Error('SESSION EXPIRÉE PENDANT LA REPRISE DE CÉRÉMONIE');
+ const remote=await ordreGetServerProgress(token);
+ if(remote?.state?.profile?.serment!==true)throw Error('SERMENT NON CONFIRMÉ SUR LE RÉSEAU');
+ if(remote?.state?.profile?.ceremonieInitiationVue===true && remote?.state?.profile?.initieAccueilVu===true){
+  S.ceremonieInitiationVue=true;S.initieAccueilVu=true;
+ }else{
+  S.ceremonieInitiationVue=true;S.initieAccueilVu=true;
+  save();
+  if(ordreSyncTimer){clearTimeout(ordreSyncTimer);ordreSyncTimer=null;}
+  await ordreSyncNow();
+  if(!ordreSyncReady||ordrePendingChanges)throw Error('CLÔTURE NON SYNCHRONISÉE');
+  const check=await ordreGetServerProgress(await ordreValidToken());
+  if(check?.state?.profile?.ceremonieInitiationVue!==true||check?.state?.profile?.initieAccueilVu!==true)
+   throw Error('CLÔTURE NON CONFIRMÉE PAR SUPABASE');
+ }
+ sessionStorage.removeItem('OCI_CEREMONY_RESULT');
+ sessionStorage.removeItem('OCI_CEREMONY_PAYLOAD');
+ sessionStorage.removeItem('OCI_CEREMONY_AUTH');
 }
 function ordreV214Activate(){
  shell(`<h1 class="title">ACTIVATION DU DOSSIER // V214</h1>
