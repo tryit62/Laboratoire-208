@@ -222,24 +222,28 @@ CHARGEMENT DU DOSSIER PERSONNEL...</div>
 function initiateHome(){if(!ordreRequireConnection())return;
  applyInitiateTheme();
  const logo=divisionLogo(S.affectation);
- // Animation d'accueil limitée à une seule fois par session authentifiée.
- let v223Entrance='';
- try{const k='OCI_V223_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');v223Entrance=' v223-entrance';}}catch(e){}
- shell(`<section class="init-dashboard${v223Entrance}">
-   <div class="init-id">
-    <div><div class="eyebrow">DOSSIER ACTIF</div><h1>${S.matricule||'INITIÉ'}</h1>
-    <div class="init-meta">STATUT // INITIÉ<br>ACCRÉDITATION // ${ordreV211Esc(S.reseauGrade||'OMBRE I')}<br>DIVISION // ${ordreV211Esc(S.reseauDivision||S.affectation)}</div></div>
-    <img class="init-division-logo" src="${logo}" alt="">
-   </div>
-   <div class="mission-status"><span>DOSSIER ACTIF</span><strong>${S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION OPÉRATIONNELLE'}</strong><small>${S.reseauMission?'Directive reçue — contenu opérationnel en attente de publication.':'Votre intégration au réseau est en cours.'}</small></div>
-   <div class="init-grid">
-    <button onclick="initiateMissions()"><b>MISSIONS</b><span>${S.reseauMission?ordreV211Esc(S.reseauMission.id):'Aucune affectation'}</span></button>
-    <button onclick="initiateMessages()"><b>MESSAGERIE</b><span class="unread">${ordreV210UnreadCount()} NON LU(S)</span></button>
-    <button onclick="initiateArchives()"><b>ARCHIVES</b><span>ACCÈS OMBRE I</span></button>
-    <button onclick="initiateProfile()"><b>DOSSIER PERSONNEL</b><span>DOSSIER 000 // CLÔTURÉ</span></button>
-   </div>
-   <div class="init-foot">ACCÈS ARCHIVES : OMBRE I <span>ÉTAT DU RÉSEAU : STABLE</span></div>
- </section>`,'TERMINAL // ACCÈS INITIÉ');
+ let entrance='';
+ try{const k='OCI_V224_ENTRANCE_'+String(S.matricule||'');if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');entrance=' v224-entrance';}}catch(e){}
+ const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
+ const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
+ const matricule=ordreV211Esc(S.matricule||'INITIÉ');
+ const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
+ const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v224-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
+ app.innerHTML=`<section class="v224-screen${entrance}" aria-label="Accueil Initié">
+   <header class="v224-header"><div class="v224-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v224-brand-name">ORDRE DES CINQ OMBRES</span><span class="v224-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v224-clearance">ACCÈS ${grade}</span></header>
+   <main class="v224-main">
+    <section class="v224-identity"><div class="v224-identity-copy"><span class="v224-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v224-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div><div class="v224-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div></section>
+    <section class="v224-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
+    <nav class="v224-grid" aria-label="Espaces réservés aux Initiés">
+      <button onclick="initiateMissions()"><span class="v224-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v224-card-name">MISSIONS</span><span class="v224-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateMessages()"><span class="v224-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v224-card-name">MESSAGERIE</span><span class="v224-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateArchives()"><span class="v224-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v224-card-name">ARCHIVES</span><span class="v224-card-desc">ACCÈS ${grade}</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateProfile()"><span class="v224-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v224-card-name">DOSSIER PERSONNEL</span><span class="v224-card-desc">D000 // CLÔTURÉ</span><span class="v224-card-arrow">↗</span></button>
+    </nav>
+   </main>
+   <footer class="v224-footer"><span class="v224-network">● &nbsp; RÉSEAU DES OMBRES // ACCÈS ${grade}</span><span class="v224-directives">DIRECTIVES REÇUES : ${ordreV210UnreadCount()}</span>${lock}</footer>
+ </section>`;
+ const lockBtn=document.getElementById('v214LockNow');if(lockBtn)lockBtn.onclick=ordreLock;
 }
 function initBack(){initiateHome()}
 function initiateMissions(){
