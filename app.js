@@ -8,7 +8,19 @@ eval3:{step:0,initialC:null,afterA_C:null,lockedC:null,retroactive:null,decision
 eval4:{step:0,sequence:[],registerCode:null,divergence:null,decision:null,complete:false},
 eval5:{step:0,sequence:[],opened:null,prediction:null,reflection:null,archiveChoice:null,decision:null,complete:false},
 tendances:{PERCEPTION:0,ADAPTATION:0,CONSEQUENCE:0,CONTINUITE:0,TEMPORISATION:0},affectationReady:false,affectationDone:false,serment:false,initiationDate:null,sermentDisponible:false,initieAccueilVu:false,ceremonieInitiationVue:false,initieMessagesLus:[]};
-let S={...defaults,...JSON.parse(localStorage.getItem('ordre_terminal')||'{}')};
+/* V1.1.6 — robust local cache parsing. Network authentication remains authoritative. */
+function ordreReadLocalCache(){
+ try{
+  const raw=localStorage.getItem('ordre_terminal');
+  if(!raw)return {};
+  const parsed=JSON.parse(raw);
+  return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};
+ }catch(error){
+  console.warn('Cache local illisible : restauration depuis les valeurs par défaut.',error);
+  return {};
+ }
+}
+let S={...defaults,...ordreReadLocalCache()};
 S.eval1={...defaults.eval1,...(S.eval1||{})};
 S.eval2={...defaults.eval2,...(S.eval2||{})};
 S.eval3={...defaults.eval3,...(S.eval3||{})};
@@ -264,15 +276,15 @@ function initiateHome(){if(!ordreRequireConnection())return;
  const grade=ordreV211Esc(S.reseauGrade||'OMBRE I');
  const division=ordreV211Esc(S.reseauDivision||S.affectation||'—');
  const matricule=ordreV211Esc(S.matricule||'INITIÉ');
- const mission=S.reseauMission?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
+ const mission=S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id)+' // '+ordreV211Esc(S.reseauMission.label):'AUCUNE AFFECTATION';
  const lock=(!ordreLockActive&&ordreAuth?.access_token)?'<button class="v224-lock" id="v214LockNow" type="button">⌑ &nbsp; VERROUILLER</button>':'';
  app.innerHTML=`<section class="v224-screen${entrance}" aria-label="Accueil Initié">
    <header class="v224-header"><div class="v224-brand"><img src="order-logo.png" alt="Emblème officiel de l’Ordre"><div><span class="v224-brand-name">ORDRE DES CINQ OMBRES</span><span class="v224-brand-sub">TERMINAL INSTITUTIONNEL <i>◆</i> RÉSEAU SÉCURISÉ</span></div></div><span class="v224-clearance">ACCÈS ${grade}</span></header>
    <main class="v224-main">
     <section class="v224-identity"><div class="v224-identity-copy"><span class="v224-kicker">DOSSIER PERSONNEL <em> / </em> IDENTITÉ AUTHENTIFIÉE</span><h1>${matricule}</h1><div class="v224-identity-meta"><span>STATUT <b>INITIÉ</b></span><span>ACCRÉDITATION <b>${grade}</b></span><span>DIVISION <b>${division}</b></span></div></div><div class="v224-emblem"><img src="${logo}" alt="Emblème officiel de la Division ${division}"></div></section>
-    <section class="v224-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
+    <section class="v224-mission" aria-label="Affectation"><span>TRANSMISSION OPÉRATIONNELLE</span><strong>${mission}</strong><small>${S.reseauMission&&ordreAuth?.matricule===S.matricule?'DIRECTIVE REÇUE // CONTENU EN ATTENTE':'VOTRE INTÉGRATION AU RÉSEAU EST EN COURS'}</small></section>
     <nav class="v224-grid" aria-label="Espaces réservés aux Initiés">
-      <button onclick="initiateMissions()"><span class="v224-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v224-card-name">MISSIONS</span><span class="v224-card-desc">${S.reseauMission?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v224-card-arrow">↗</span></button>
+      <button onclick="initiateMissions()"><span class="v224-card-top">01 <i>◆</i> OPÉRATIONS</span><span class="v224-card-name">MISSIONS</span><span class="v224-card-desc">${S.reseauMission&&ordreAuth?.matricule===S.matricule?ordreV211Esc(S.reseauMission.id):'AUCUNE AFFECTATION'}</span><span class="v224-card-arrow">↗</span></button>
       <button onclick="initiateMessages()"><span class="v224-card-top">02 <i>◆</i> TRANSMISSIONS</span><span class="v224-card-name">MESSAGERIE</span><span class="v224-card-desc">${ordreV210UnreadCount()} NON LU(S)</span><span class="v224-card-arrow">↗</span></button>
       <button onclick="initiateArchives()"><span class="v224-card-top">03 <i>◆</i> DOCUMENTATION</span><span class="v224-card-name">ARCHIVES</span><span class="v224-card-desc">ACCÈS ${grade}</span><span class="v224-card-arrow">↗</span></button>
       <button onclick="initiateProfile()"><span class="v224-card-top">04 <i>◆</i> IDENTITÉ</span><span class="v224-card-name">DOSSIER PERSONNEL</span><span class="v224-card-desc">D000 // CLÔTURÉ</span><span class="v224-card-arrow">↗</span></button>
@@ -286,7 +298,7 @@ function initBack(){initiateHome()}
 function initiateMissions(){
  const mission=S.reseauMission;
  const assigned=Boolean(mission&&ordreAuth?.matricule===S.matricule);
- const frame=`<div class="v112-mission-head"><span>ORDRE DES CINQ OMBRES // RÉSEAU OPÉRATIONNEL</span><span>REGISTRE DES AFFECTATIONS</span></div><h1 class="title">MISSIONS</h1><p class="v112-mission-intro">Consultation du registre individuel. Les informations affichées sont limitées aux directives effectivement enregistrées pour cette session.</p>`;
+ const frame=`<div class="v112-mission-head"><span>ORDRE DES CINQ OMBRES // RÉSEAU OPÉRATIONNEL</span><span>REGISTRE DES AFFECTATIONS</span></div><h1 class="title">MISSIONS</h1>`;
  if(assigned){
   shell(frame+`<section class="v112-mission-sheet" aria-label="Affectation enregistrée"><div class="v112-mission-status"><span>AFFECTATION INDIVIDUELLE</span><strong>ENREGISTRÉE</strong></div><div class="v112-mission-grid"><div><small>RÉFÉRENCE OPÉRATIONNELLE</small><strong id="v112MissionCode"></strong></div><div><small>INTITULÉ DE L'AFFECTATION</small><strong id="v112MissionLabel"></strong></div><div><small>ÉTAT DU DOSSIER</small><strong>CONTENU NON TRANSMIS</strong></div><div><small>CONSULTATION</small><strong>NOTICE D'AFFECTATION UNIQUEMENT</strong></div></div><p class="v112-mission-notice">L'affectation figure dans votre registre. Aucun ordre d'exécution ni document opérationnel complémentaire n'est disponible à ce stade.</p><div class="v112-mission-end">FIN DE NOTICE // DOSSIER EN ATTENTE DE TRANSMISSION</div></section><button class="btn" onclick="initBack()">[ RETOUR ]</button>`,'MISSIONS // OMBRE I');
   document.getElementById('v112MissionCode').textContent=mission.id;
@@ -2077,7 +2089,7 @@ function ordreV210UnreadCount(){
  const remote=r.filter(m=>!m.read_at).length;
  return (S.serment?unreadMailCount():(S.messages?1:0))+remote;
 }
-function ordreV210UnreadIds(){return (S.reseauMessages||[]).filter(m=>!m.read_at).map(m=>m.id)}
+function ordreV210UnreadIds(){return (Array.isArray(S.reseauMessages)?S.reseauMessages:[]).filter(m=>!m.read_at).map(m=>m.id)}
 let ordreV210LastUnreads=null;
 function ordreV210Decorate(){
  if(!ordreAuth?.player_id||ADMIN_MODE||S.matricule!==ordreAuth.matricule)return;
@@ -2257,3 +2269,32 @@ function ordreV113Enhance(status){
 }
 const ordreV113Shell=shell;
 shell=function(...args){ordreV113Shell(...args);ordreV113Enhance(args[1]);};
+
+/* V1.1.5 — restrained live states; purely presentational, no new privileges or lore. */
+function ordreV115HomeSignals(){
+ const screen=document.querySelector('.v224-screen');if(!screen)return;
+ const count=ordreV210UnreadCount();
+ const mail=screen.querySelector('button[onclick="initiateMessages()"]');
+ if(mail){mail.classList.toggle('v115-pending',count>0);mail.setAttribute('aria-label','Messagerie, '+count+' transmission(s) non lue(s)');
+  const desc=mail.querySelector('.v224-card-desc');if(desc)desc.textContent=count?count+' TRANSMISSION(S) NON LUE(S)':'AUCUNE TRANSMISSION NON LUE';}
+ const missions=screen.querySelector('button[onclick="initiateMissions()"]');
+ if(missions){const assigned=!!(S.reseauMission&&ordreAuth?.matricule===S.matricule);missions.classList.toggle('v115-assigned',assigned);}
+ const directives=screen.querySelector('.v224-directives');if(directives)directives.textContent='TRANSMISSIONS NON LUES : '+count;
+}
+function ordreV115InboxStates(){
+ const list=document.getElementById('ordreV210List');if(!list)return;
+ list.querySelectorAll('button').forEach(button=>{
+  const unread=button.classList.contains('ordre-v210-unread');
+  button.setAttribute('aria-label',(unread?'Non lue. ':'Lue. ')+button.innerText.trim());
+  const ref=button.querySelector('.v113-mail-ref');if(ref&&!ref.querySelector('.v115-read-state')){
+   const state=document.createElement('span');state.className='v115-read-state';state.textContent=unread?' // NON LUE':' // CONSULTÉE';ref.append(state);
+  }
+ });
+}
+const ordreV115Home=initiateHome;
+initiateHome=function(...args){const out=ordreV115Home(...args);ordreV115HomeSignals();return out;};
+const ordreV115Inbox=ordreV210Inbox;
+ordreV210Inbox=function(...args){const out=ordreV115Inbox(...args);ordreV115InboxStates();return out;};
+const ordreV115Decorate=ordreV210Decorate;
+ordreV210Decorate=function(...args){const out=ordreV115Decorate(...args);ordreV115HomeSignals();return out;};
+

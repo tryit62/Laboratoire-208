@@ -1228,3 +1228,11 @@ body.initiated:has(.v224-screen) #app{height:100dvh;min-height:0}
 .v113-transmissions .ordre-v210-mail{position:relative;padding-bottom:27px}
 .v113-mail-ref{position:absolute;right:14px;bottom:7px;font:9px 'Courier New',monospace;letter-spacing:.06em;color:#a99b7d;opacity:.8}
 @media(max-width:600px){.v113-kicker{font-size:9px;letter-spacing:.04em}.v113-transmissions .ordre-v210-mail{padding-bottom:31px}}
+
+/* V1.1.5 — no permanent animation, subtle signals only. */
+.v224-grid button.v115-pending{box-shadow:inset 0 0 0 1px rgba(187,158,99,.33)}
+.v224-grid button.v115-pending .v224-card-desc{color:#d7bf87}
+.v224-grid button.v115-assigned .v224-card-desc{color:#c9b387}
+.ordre-v210-mail .v115-read-state{font-weight:normal;opacity:.76}
+.ordre-v210-mail.ordre-v210-unread .v115-read-state{opacity:1;color:#d6bc83}
+@media (prefers-reduced-motion:reduce){.v224-grid button,.ordre-v210-mail{transition:none!important;animation:none!important}}
